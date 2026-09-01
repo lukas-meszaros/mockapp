@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MockApp</title>
+    <link rel="stylesheet" href="./css/mockapp.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="toolbar">
+        <div class="toolbar-group">
+          <strong>MockApp</strong>
+          <button type="button" data-action="new-project">New</button>
+          <button type="button" data-action="save-project">Save JSON</button>
+          <button type="button" data-action="open-project">Open JSON</button>
+          <button type="button" data-action="export-html">Export HTML</button>
+        </div>
+        <div class="toolbar-group">
+          <label for="viewport-select">Viewport</label>
+          <select id="viewport-select">
+            <option value="desktop">Desktop</option>
+            <option value="tablet">Tablet</option>
+            <option value="phone">Phone</option>
+          </select>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <aside class="panel components-panel">
+          <div class="panel-header">
+            <h1>Components</h1>
+            <input id="component-search" type="search" placeholder="Search..." />
+          </div>
+          <div id="component-palette" class="component-palette"></div>
+        </aside>
+
+        <section class="canvas-panel">
+          <div class="canvas-toolbar">
+            <span>Canvas</span>
+            <span id="page-name">Page 1</span>
+          </div>
+          <div id="canvas-stage" class="canvas-stage viewport-desktop">
+            <div id="canvas-surface" class="canvas-surface" aria-label="Mockup canvas"></div>
+          </div>
+        </section>
+
+        <aside class="panel properties-panel">
+          <div class="panel-header">
+            <h1>Properties</h1>
+          </div>
+          <div id="property-inspector" class="property-inspector">
+            <p class="muted">Select a component to edit its properties.</p>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="status-bar">
+        <span id="status-viewport">Viewport: desktop</span>
+        <span id="status-selection">Selection: none</span>
+        <span id="status-count">Components: 0</span>
+        <span id="status-save">Autosave: ready</span>
+      </footer>
+    </div>
+
+    <input id="project-file-input" type="file" accept="application/json" hidden />
+    <script src="./js/app/app.js"></script>
+  </body>
+</html>

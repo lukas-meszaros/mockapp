@@ -1,0 +1,2495 @@
+# Project Prompt: Build "MockApp" — Standalone Offline Bootstrap UI Mockup Designer
+You are acting as the lead software architect, UX designer, and senior implementation engineer for a new application called **MockApp**.
+
+MockApp is a standalone desktop-browser web application for visually designing realistic Bootstrap-based UI mockups.
+
+The application should feel conceptually similar to draw.io / diagrams.net in its interaction model:
+
+- component palette on the left
+- large central design canvas
+- property inspector on the right
+- toolbar/menu at the top
+- drag and drop
+- selection
+- resizing
+- alignment
+- zooming
+- keyboard shortcuts
+- open/save/export workflows
+
+However, MockApp is specifically intended for designing realistic Bootstrap user interfaces rather than diagrams.
+
+The project must prioritize:
+
+1. maintainability
+2. modularity
+3. clean separation of responsibilities
+4. offline operation
+5. no server requirement
+6. clear internal documentation
+7. AI-maintainability
+8. future Bootstrap upgrades
+9. future feature expansion
+10. predictable project file organization
+
+Do NOT immediately start implementing the application.
+
+Follow the mandatory workflow defined below.
+
+---
+
+# 1. PRIMARY PRODUCT GOAL
+Create a visual Bootstrap UI mockup designer called **MockApp**.
+
+The user must be able to launch it locally by opening:
+
+`mockapp.html`
+
+directly in a modern browser.
+
+No web server must be required.
+
+The application must work offline after the repository/package has been downloaded.
+
+There must be no required CDN calls or remote runtime dependencies.
+
+All runtime libraries, fonts, icons, Bootstrap assets, JavaScript libraries, CSS libraries, and other required resources must be stored locally inside the project.
+
+The application may contain many supporting files.
+
+In fact, modularity is preferred over embedding everything into `mockapp.html`.
+
+`mockapp.html` should remain as small and simple as reasonably possible.
+
+Do NOT create a giant monolithic HTML file unless there is a compelling technical reason.
+
+---
+
+# 2. IMPORTANT ARCHITECTURAL PRINCIPLE
+The goal is NOT to create a single-file application.
+
+The goal is:
+
+- one obvious entry point: `mockapp.html`
+- many well-organized supporting files
+- clean modules
+- locally stored dependencies
+- easy future maintenance
+- easy Bootstrap upgrades
+- easy AI-assisted code modification
+
+Prefer multiple focused files over large files.
+
+Examples:
+
+- separate UI shell logic
+- separate canvas logic
+- separate drag/drop logic
+- separate selection logic
+- separate resize logic
+- separate keyboard logic
+- separate project persistence logic
+- separate export logic
+- separate Bootstrap component definitions
+- separate property editors
+- separate utilities
+
+Avoid unnecessarily large source files.
+
+As a general guideline:
+
+- keep modules focused on one responsibility
+- split files that become difficult to understand
+- avoid files containing unrelated subsystems
+- avoid files containing hundreds of unrelated functions
+
+---
+
+# 3. BOOTSTRAP REQUIREMENTS
+Use the **latest stable Bootstrap release available at implementation time**.
+
+Also include the corresponding/current **Bootstrap Icons** package.
+
+Bootstrap and Bootstrap Icons must be stored locally.
+
+Do not use CDN links in the final application.
+
+Keep vendor code clearly separated from application code.
+
+Recommended structure:
+
+`vendor/bootstrap/...`
+
+`vendor/bootstrap-icons/...`
+
+Do not modify vendored Bootstrap source files unless absolutely necessary.
+
+Application overrides should live in MockApp-specific stylesheets.
+
+Bootstrap should be upgradeable in the future by replacing/updating vendor files with minimal impact on MockApp source code.
+
+Document the exact installed Bootstrap version.
+
+---
+
+# 4. BROWSER SUPPORT
+Target current desktop versions of:
+
+- Google Chrome
+- Microsoft Edge
+- Mozilla Firefox
+- Safari
+
+Legacy browser support is not required.
+
+The application should primarily target desktop/laptop use.
+
+Tablet use may work but is not the primary interaction model.
+
+---
+
+# 5. IMPLEMENTATION TECHNOLOGY
+Do NOT assume a framework yet.
+
+During the architecture phase, evaluate appropriate implementation approaches, including at minimum:
+
+- vanilla JavaScript / ES modules
+- lightweight JavaScript architecture
+- React
+- Vue
+- other reasonable alternatives if relevant
+
+The application must ultimately work when opened directly through:
+
+`file://.../mockapp.html`
+
+without requiring a web server.
+
+This constraint is important.
+
+Explicitly investigate browser restrictions affecting:
+
+- ES module loading from `file://`
+- fetch()
+- dynamically loading local JSON files
+- worker files
+- browser security restrictions
+- local assets
+- import maps
+- framework build outputs
+
+Recommend the architecture that best satisfies:
+
+- direct local launch
+- maintainability
+- modularity
+- many supporting files
+- offline operation
+- future extensibility
+- easy debugging
+- no server dependency
+
+Do not choose a framework purely because it is fashionable.
+
+Explain the tradeoffs before deciding.
+
+Vanilla JavaScript is a reasonable candidate, but you must make the final recommendation based on the requirements.
+
+---
+
+# 6. MANDATORY PHASE 1 — ANALYZE BEFORE CODING
+Before writing implementation code, create a complete design and architecture proposal.
+
+Do NOT skip this phase.
+
+Produce the following.
+
+## 6.1 Product Summary
+Explain:
+
+- what MockApp is
+- intended users
+- major capabilities
+- user workflow
+- non-goals for the first version
+
+---
+
+## 6.2 Technical Architecture
+Describe:
+
+- runtime architecture
+- application modules
+- state management
+- UI rendering strategy
+- component model
+- event architecture
+- persistence
+- dependency handling
+- Bootstrap integration
+- export subsystem
+- undo/redo architecture
+- canvas architecture
+
+Include a clear architecture diagram using Mermaid if Mermaid is available in the current environment.
+
+Also include an ASCII representation where useful.
+
+---
+
+## 6.3 UI / UX Proposal
+Design the interface BEFORE implementation.
+
+MockApp should broadly resemble this layout:
+
+```
++----------------------------------------------------------------------------------+
+| File  Edit  View  Insert  Arrange  Help                [Undo] [Redo] [Zoom]     |
++----------------------+--------------------------------------+--------------------+
+|                      |                                      |                    |
+| COMPONENTS           |                                      | PROPERTIES         |
+|                      |                                      |                    |
+| Search...            |              CANVAS                  | Selected: Button   |
+|                      |                                      |                    |
+| Layout               |                                      | Text               |
+| Forms                |                                      | Variant            |
+| Buttons              |                                      | Size               |
+| Navigation           |                                      | Width              |
+| Feedback             |                                      | Alignment          |
+| Data Display         |                                      | State              |
+| Helpers              |                                      | etc.               |
+| Templates            |                                      |                    |
+|                      |                                      |                    |
++----------------------+--------------------------------------+--------------------+
+| Status | viewport | zoom | selection | x/y | dimensions                          |
++----------------------------------------------------------------------------------+
+```
+This is only a starting point.
+
+Improve it where appropriate.
+
+The UI should feel familiar to users of:
+
+- draw.io
+- Figma
+- IDE property inspectors
+- desktop GUI builders
+
+Do not copy another application's proprietary appearance exactly.
+
+---
+
+## 6.4 Visual Mockup
+Before implementation, provide at least:
+
+1. overall application wireframe
+2. expanded left component panel
+3. right-hand property inspector example
+4. canvas with several sample Bootstrap components
+5. responsive viewport selector
+6. file/open/save interaction concept
+
+Use ASCII, Mermaid, or another textual format available to Copilot.
+
+The purpose is to visually validate the application structure before implementation.
+
+---
+
+# 7. MANDATORY DOCUMENTATION FILES
+Create project documentation specifically intended to help both human developers and AI coding assistants.
+
+At minimum create:
+
+```
+README.md
+AGENTS.md
+docs/
+    ARCHITECTURE.md
+    DESIGN.md
+    FILE_INDEX.md
+    DATA_MODEL.md
+    PROJECT_FORMAT.md
+    COMPONENT_LIBRARY.md
+    KEYBOARD_SHORTCUTS.md
+    DEVELOPMENT.md
+    TESTING.md
+    ROADMAP.md
+```
+You may propose additional files if useful.
+
+---
+
+# 8. AGENTS.md — CRITICAL AI INSTRUCTION FILE
+Create a root-level:
+
+`AGENTS.md`
+
+This file is extremely important.
+
+Its purpose is to instruct GitHub Copilot and other AI assistants how to work with the project.
+
+It must explicitly tell AI assistants:
+
+## Before changing code
+
+1. Read `AGENTS.md`.
+2. Read `docs/FILE_INDEX.md`.
+3. Identify the subsystem related to the requested change.
+4. Read only the relevant files first.
+5. Avoid scanning the entire repository unless necessary.
+6. Update `docs/FILE_INDEX.md` whenever:a file is added
+7. a file is removed
+8. a file is renamed
+9. file responsibilities significantly change
+10. Update architecture documentation when architecture changes.
+11. Update tests when behavior changes.
+12. Do not place unrelated functionality into convenient existing files.
+13. Prefer creating/refactoring focused modules when responsibilities become mixed.
+
+Also include project-specific rules such as:
+
+- do not modify `vendor/` code
+- no runtime CDN dependencies
+- preserve direct `file://` launch
+- preserve backwards compatibility of saved MockApp JSON where practical
+- document migrations when JSON format changes
+- keep Bootstrap-specific metadata centralized
+- avoid duplicating Bootstrap component definitions across files
+
+---
+
+# 9. FILE_INDEX.md — CRITICAL PROJECT MAP
+Create:
+
+`docs/FILE_INDEX.md`
+
+This file must act as the canonical map of the repository.
+
+Its purpose is to prevent developers and AI assistants from having to inspect every file before making changes.
+
+For EVERY project-maintained source file, document:
+
+- path
+- primary purpose
+- subsystem
+- public responsibilities
+- important classes
+- important functions
+- important exported functions
+- important event handlers
+- important dependencies
+- files it commonly interacts with
+- situations where this file should be modified
+- situations where this file should NOT be modified
+
+Example format:
+
+```
+## src/canvas/selection-manager.js
+
+Purpose:
+Handles selection state for elements placed on the design canvas.
+
+Subsystem:
+Canvas interaction.
+
+Responsibilities:
+- single selection
+- multi-selection
+- selection rectangle
+- selection highlighting
+
+Important exports:
+- selectElement(id)
+- clearSelection()
+- toggleSelection(id)
+- selectRange(rect)
+
+Depends on:
+- app-state.js
+- canvas-events.js
+
+Usually modify this file when:
+- changing selection rules
+- adding multi-select behavior
+- changing click/shift-click behavior
+
+Do NOT modify this file when:
+- changing component property definitions
+- changing project save format
+```
+Keep this document updated throughout implementation.
+
+If a file is created or removed, update `FILE_INDEX.md` in the same change.
+
+---
+
+# 10. SOURCE CODE ORGANIZATION
+Propose the exact structure during architecture design.
+
+A likely organization could resemble:
+
+```
+mockapp/
+│
+├── mockapp.html
+├── README.md
+├── AGENTS.md
+│
+├── css/
+│   ├── mockapp.css
+│   ├── layout.css
+│   ├── canvas.css
+│   ├── components-panel.css
+│   ├── properties-panel.css
+│   ├── toolbar.css
+│   └── dialogs.css
+│
+├── js/
+│   ├── app/
+│   ├── canvas/
+│   ├── components/
+│   ├── properties/
+│   ├── persistence/
+│   ├── export/
+│   ├── history/
+│   ├── keyboard/
+│   ├── ui/
+│   └── utils/
+│
+├── vendor/
+│   ├── bootstrap/
+│   └── bootstrap-icons/
+│
+├── assets/
+│
+├── docs/
+│
+├── examples/
+│
+└── tests/
+```
+This is only illustrative.
+
+Improve it if there is a better structure.
+
+Avoid deeply nested directories unless they add genuine clarity.
+
+---
+
+# 11. APPLICATION LAYOUT
+The main application should include:
+
+## Top menu / toolbar
+Provide:
+
+- File
+- Edit
+- View
+- Insert
+- Arrange
+- Help
+
+Toolbar actions should include commonly used operations:
+
+- New
+- Open
+- Save
+- Save As
+- Undo
+- Redo
+- Cut
+- Copy
+- Paste
+- Delete
+- Duplicate
+- Bring Forward
+- Send Backward
+- Align
+- Zoom out
+- Zoom reset
+- Zoom in
+- Preview
+
+Provide icons where useful.
+
+---
+
+# 12. LEFT COMPONENT PALETTE
+Provide a searchable component library.
+
+Components should be grouped into logical categories.
+
+Example categories:
+
+## Layout
+
+- Container
+- Fluid Container
+- Row
+- Column
+- Stack
+- Horizontal Stack
+- Grid patterns
+- Divider
+- Spacer
+
+## Typography
+
+- Heading H1-H6
+- Paragraph
+- Lead paragraph
+- Small text
+- Blockquote
+- Code
+- Preformatted text
+
+## Buttons
+
+- Button
+- Outline Button
+- Button Group
+- Button Toolbar
+- Close Button
+
+## Forms
+
+- Text Input
+- Email Input
+- Password Input
+- Number Input
+- Search Input
+- Telephone Input
+- URL Input
+- Textarea
+- Select
+- Multi-select
+- Checkbox
+- Radio Button
+- Switch
+- Range
+- File Input
+- Input Group
+- Floating Label
+- Form Group
+- Validation State
+
+## Navigation
+
+- Navbar
+- Nav
+- Tabs
+- Pills
+- Breadcrumb
+- Pagination
+- Dropdown
+- Dropdown Button
+- Offcanvas navigation
+
+## Content
+
+- Card
+- List Group
+- Table
+- Responsive Table
+- Image
+- Figure
+- Badge
+
+## Feedback
+
+- Alert
+- Progress
+- Spinner
+- Toast
+- Placeholder
+- Modal
+
+## Interactive Bootstrap Components
+
+- Accordion
+- Collapse
+- Carousel
+- Modal
+- Offcanvas
+- Tooltip representation
+- Popover representation
+
+For components such as tooltip/popover that normally depend on runtime interaction, provide an appropriate mockup representation and property configuration.
+
+---
+
+# 13. COMPOSITE / TEMPLATE COMPONENTS
+Also include reusable higher-level components.
+
+Examples:
+
+- Login Form
+- Registration Form
+- Search Bar
+- Header
+- Footer
+- Sidebar Navigation
+- Dashboard Metric Card
+- Dashboard Grid
+- Toolbar
+- Filter Bar
+- Data Table
+- Settings Form
+- Contact Form
+- Profile Card
+- Empty State
+- Confirmation Dialog
+- Hero Section
+- Basic Admin Layout
+
+These should be built using normal Bootstrap components.
+
+Avoid creating a separate proprietary component system if Bootstrap composition can achieve the same thing.
+
+---
+
+# 14. COMPONENT SEARCH
+The component panel must contain a search field.
+
+Searching should filter by:
+
+- component name
+- category
+- tags
+- aliases
+
+Examples:
+
+Searching:
+
+`input`
+
+should find:
+
+- Text Input
+- Email Input
+- Password Input
+- Input Group
+- File Input
+
+Searching:
+
+`nav`
+
+should find:
+
+- Navbar
+- Nav
+- Tabs
+- Pills
+- Breadcrumb
+
+---
+
+# 15. CANVAS
+The central canvas is the primary design area.
+
+Required functionality:
+
+- drag components from palette onto canvas
+- drag existing components
+- resize components
+- single selection
+- multi-selection
+- selection rectangle
+- delete
+- duplicate
+- cut
+- copy
+- paste
+- undo
+- redo
+- zoom
+- pan
+- snap-to-grid
+- alignment guides
+- configurable grid
+- show/hide grid
+- rulers if feasible
+- z-order
+- parent/child nesting
+- nested Bootstrap layout structures
+
+Selection should show:
+
+- selection outline
+- resize handles
+- current dimensions
+- parent/container relationship where useful
+
+---
+
+# 16. NESTED BOOTSTRAP LAYOUTS
+This is a core feature.
+
+MockApp must understand parent/child layout structures.
+
+Users must be able to build:
+
+```
+Container
+    Row
+        Column
+            Form
+                Input
+                Button
+```
+or:
+
+```
+Container
+    Row
+        col-md-4
+            Card
+        col-md-8
+            Table
+```
+Do not model everything as unrelated absolutely positioned rectangles.
+
+Canvas objects should support nesting.
+
+The data model should represent hierarchy explicitly.
+
+---
+
+# 17. DRAG AND DROP
+Support:
+
+- palette → canvas
+- canvas → different parent
+- reorder within parent
+- move between Bootstrap columns
+- nested drops
+- visual valid-drop indicators
+
+Prevent invalid containment where necessary.
+
+For example, Bootstrap layout semantics should be considered when determining reasonable nesting.
+
+Do not make containment unnecessarily restrictive, however.
+
+---
+
+# 18. PROPERTY INSPECTOR
+The right-hand panel displays properties for the selected element.
+
+Do NOT implement an unrestricted raw HTML/CSS editor in the first version.
+
+The inspector should expose structured properties.
+
+Potential sections:
+
+## General
+
+- ID
+- name
+- visible
+- locked
+
+## Content
+
+- text
+- label
+- placeholder
+- value
+- title
+
+## Bootstrap
+
+- variant
+- size
+- breakpoint options
+- contextual state
+
+## Layout
+
+- width
+- height
+- min/max width
+- alignment
+- display
+- gap
+- margin
+- padding
+
+## Grid
+
+- column widths
+- responsive column widths
+- offset
+- order
+- gutter
+
+## State
+
+- enabled / disabled
+- active
+- checked
+- selected
+- expanded
+
+## Form-specific
+
+- input type
+- required
+- readonly
+- multiple
+- options
+- validation state
+
+## Visual
+
+- border
+- rounded
+- shadow
+- text alignment
+
+Use Bootstrap-supported options wherever possible rather than inventing duplicate styling systems.
+
+---
+
+# 19. RESPONSIVE DESIGN
+Provide viewport presets.
+
+At minimum:
+
+- Mobile portrait
+- Mobile landscape
+- Tablet
+- Laptop
+- Desktop
+- Large Desktop
+- Custom
+
+Show the current viewport dimensions.
+
+Support Bootstrap breakpoint-aware properties.
+
+At minimum:
+
+- xs
+- sm
+- md
+- lg
+- xl
+- xxl
+
+Allow properties such as:
+
+- column width per breakpoint
+- visibility per breakpoint
+- responsive spacing where practical
+- responsive display
+
+Provide a convenient UI rather than requiring Bootstrap class knowledge.
+
+---
+
+# 20. COMPONENT TREE / LAYERS
+Include a tree representation of the mockup hierarchy.
+
+This may be:
+
+- a separate panel
+- a tab in the left panel
+- a tab in the right panel
+
+Recommend the most usable approach.
+
+Example:
+
+```
+Page
+└── Container
+    ├── Navbar
+    └── Row
+        ├── Column
+        │   └── Card
+        └── Column
+            └── Table
+```
+Tree features:
+
+- select element
+- rename logical label
+- collapse/expand
+- reorder
+- drag/reparent
+- hide/show
+- lock/unlock
+
+---
+
+# 21. PAGE SUPPORT
+Design the data model so a project can eventually contain multiple pages/screens.
+
+Prefer implementing multiple pages in the first version if it does not add excessive complexity.
+
+For example:
+
+```
+Pages
+- Login
+- Dashboard
+- Users
+- Settings
+```
+Each page should maintain its own component tree.
+
+Provide:
+
+- Add Page
+- Duplicate Page
+- Rename Page
+- Delete Page
+- Reorder Pages
+
+If multi-page support is postponed, the data model should still be designed to add it without breaking existing project files.
+
+Explain the decision.
+
+---
+
+# 22. UNDO / REDO
+Implement a proper history model.
+
+Undo/redo should support:
+
+- add component
+- remove component
+- move component
+- resize component
+- property change
+- reparent component
+- reorder component
+- duplicate
+- multi-selection operations
+- page operations if applicable
+
+Avoid storing excessive memory unnecessarily.
+
+Recommend either:
+
+- command pattern
+- state patches
+- immutable snapshots
+- another justified mechanism
+
+Explain the selected method.
+
+---
+
+# 23. KEYBOARD SHORTCUTS
+Support common desktop conventions.
+
+At minimum:
+
+```
+Ctrl/Cmd + N       New
+Ctrl/Cmd + O       Open
+Ctrl/Cmd + S       Save
+Ctrl/Cmd + Shift+S Save As
+
+Ctrl/Cmd + Z       Undo
+Ctrl/Cmd + Shift+Z Redo
+Ctrl/Cmd + Y       Redo where conventional
+
+Ctrl/Cmd + X       Cut
+Ctrl/Cmd + C       Copy
+Ctrl/Cmd + V       Paste
+Ctrl/Cmd + D       Duplicate
+
+Delete             Delete selected
+Backspace          Delete selected where safe
+
+Ctrl/Cmd + A       Select All
+
+Ctrl/Cmd + +       Zoom In
+Ctrl/Cmd + -       Zoom Out
+Ctrl/Cmd + 0       Reset Zoom
+```
+Arrow key movement should also be considered.
+
+Example:
+
+- Arrow = move 1 unit
+- Shift + Arrow = move larger increment
+
+Document all shortcuts in:
+
+`docs/KEYBOARD_SHORTCUTS.md`
+
+---
+
+# 24. PROJECT JSON FORMAT
+MockApp projects should save primarily as JSON.
+
+Create a versioned format.
+
+Example conceptual structure:
+
+```
+{
+  "format": "MockApp",
+  "version": 1,
+  "metadata": {
+    "name": "Customer Portal",
+    "created": "...",
+    "modified": "..."
+  },
+  "settings": {
+    "grid": true,
+    "snap": true
+  },
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Dashboard",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "components": []
+    }
+  ]
+}
+```
+The actual schema should be designed carefully.
+
+Requirements:
+
+- version field
+- stable unique element IDs
+- component type
+- parent relationship/hierarchy
+- Bootstrap properties
+- position/layout properties
+- content
+- responsive configuration
+- component state
+- metadata
+- future extensibility
+
+Document the format in:
+
+`docs/PROJECT_FORMAT.md`
+
+Also create examples under:
+
+`examples/`
+
+Example:
+
+`examples/dashboard.mockapp.json`
+
+---
+
+# 25. SAVE / OPEN
+Required functions:
+
+## New Project
+Create a blank project.
+
+Warn about unsaved changes.
+
+## Open Project
+Use browser file selection.
+
+Load local MockApp JSON.
+
+Validate format.
+
+Handle malformed or incompatible project files gracefully.
+
+## Save
+Download/update project file using browser-supported local file APIs where possible.
+
+Investigate the File System Access API.
+
+Provide a compatible fallback for browsers without it.
+
+## Save As
+Download/save a new file.
+
+Use an appropriate extension, preferably:
+
+`.mockapp.json`
+
+or another clearly documented choice.
+
+---
+
+# 26. AUTOSAVE
+Use browser local storage or IndexedDB for local recovery.
+
+Requirements:
+
+- autosave current session
+- restore after browser crash/accidental close
+- distinguish autosave from manually saved project
+- provide recovery workflow
+- avoid silently overwriting user files
+
+Consider IndexedDB if project size can exceed sensible localStorage limits.
+
+Explain the selected approach.
+
+---
+
+# 27. RECENT PROJECTS
+Because direct browser file access has security restrictions, carefully design "Recent Projects".
+
+Possible behavior:
+
+- remember filenames
+- remember metadata
+- remember File System Access handles where supported
+- otherwise prompt the user to select the file again
+
+Do not imply access to arbitrary local files when browsers prohibit it.
+
+---
+
+# 28. EXPORT
+Support the following:
+
+## Export HTML
+Generate usable HTML based on the designed mockup.
+
+The exported output should use Bootstrap.
+
+Offer reasonable export strategies such as:
+
+- standalone HTML using local Bootstrap
+- HTML fragment
+- Bootstrap markup
+
+Explain what is technically practical.
+
+Do not produce unnecessarily messy generated markup.
+
+## Export PNG
+Export the current canvas/page as PNG.
+
+Investigate appropriate client-side approaches.
+
+## Export SVG
+Export the design where practical.
+
+If exact native HTML → SVG conversion is problematic, document limitations and implement the most reliable useful behavior.
+
+## Copy Project JSON
+Allow project JSON to be copied to clipboard.
+
+---
+
+# 29. PREVIEW MODE
+Provide a Preview mode.
+
+Preview mode should:
+
+- hide editor chrome
+- show the current design as realistically as possible
+- allow responsive preview
+- allow Bootstrap interactions where practical
+
+Potential interactive behaviors:
+
+- dropdown
+- collapse
+- accordion
+- modal
+- tabs
+- offcanvas
+- carousel
+
+MockApp edit mode should not accidentally trigger interactions when the user intends to select an element.
+
+Use a clear separation between:
+
+- Edit Mode
+- Preview Mode
+
+---
+
+# 30. ALIGNMENT AND ARRANGEMENT
+Support:
+
+- align left
+- align center horizontally
+- align right
+- align top
+- align middle vertically
+- align bottom
+- distribute horizontally
+- distribute vertically
+- same width
+- same height
+
+Only enable operations that make sense for the current selection/layout context.
+
+For nested Bootstrap-flow layouts, distinguish between:
+
+- physical canvas arrangement
+- Bootstrap flow/layout arrangement
+
+Do not fight Bootstrap's layout model.
+
+---
+
+# 31. SNAP AND GRID
+Provide:
+
+- show/hide grid
+- snap on/off
+- configurable grid size
+- visual alignment guides
+
+Suggested default:
+
+8 px grid
+
+but justify the final choice.
+
+---
+
+# 32. Z-ORDER
+Support:
+
+- Bring to Front
+- Bring Forward
+- Send Backward
+- Send to Back
+
+Where z-order does not apply because elements are flow-layout children, disable or adapt those controls appropriately.
+
+---
+
+# 33. COMPONENT LIBRARY ARCHITECTURE
+Do NOT hard-code component logic throughout many unrelated files.
+
+Create a centralized component registry or equivalent architecture.
+
+Each component definition should describe information such as:
+
+- unique type
+- display name
+- category
+- tags
+- icon
+- default properties
+- allowed properties
+- default children if any
+- containment rules
+- renderer
+- property editor schema
+- export behavior
+
+Example conceptual definition:
+
+```
+{
+    type: "bootstrap.button",
+    name: "Button",
+    category: "Buttons",
+    tags: ["button", "action", "bootstrap"],
+    defaults: {
+        text: "Button",
+        variant: "primary",
+        size: "md",
+        disabled: false
+    }
+}
+```
+Do not duplicate property metadata unnecessarily.
+
+---
+
+# 34. PROPERTY EDITOR ARCHITECTURE
+Build reusable property editors.
+
+Examples:
+
+- text editor
+- checkbox editor
+- select editor
+- numeric editor
+- dimension editor
+- spacing editor
+- Bootstrap variant editor
+- breakpoint editor
+- list/options editor
+
+Property controls should be generated from component metadata where practical.
+
+Avoid manually coding a completely separate inspector form for every component.
+
+Allow exceptions for complex components.
+
+---
+
+# 35. INTERNAL STATE
+Define a clear application-state model.
+
+Likely areas:
+
+```
+project
+pages
+activePage
+components
+selection
+clipboard
+history
+viewport
+zoom
+uiPreferences
+```
+Avoid uncontrolled global variables.
+
+State mutations should go through predictable mechanisms.
+
+Document them.
+
+---
+
+# 36. EVENT ARCHITECTURE
+Use a consistent event strategy.
+
+Possible approaches:
+
+- central event bus
+- controller actions
+- observer pattern
+- state actions
+- DOM custom events
+
+Avoid arbitrary cross-module calls that create tight coupling.
+
+Document:
+
+- major events
+- event source
+- subscribers
+- payload structure
+
+---
+
+# 37. IDS
+All project entities should use stable unique IDs.
+
+Do not use array indexes as persistent identifiers.
+
+Use an appropriate browser-native approach such as:
+
+`crypto.randomUUID()`
+
+where supported, with fallback if needed.
+
+---
+
+# 38. SECURITY
+Because MockApp renders user-provided text and opens JSON files:
+
+Protect against accidental script injection.
+
+Do NOT insert arbitrary project text using unsafe `innerHTML`.
+
+Escape or safely render user-controlled content.
+
+If some component rendering requires HTML fragments, clearly define trusted internal templates vs user-controlled values.
+
+This becomes especially important for future project sharing.
+
+---
+
+# 39. ACCESSIBILITY
+The MockApp editor itself should follow reasonable accessibility practices.
+
+Include:
+
+- keyboard navigation
+- visible focus indicators
+- labels
+- ARIA where appropriate
+- accessible toolbar controls
+- meaningful button titles/tooltips
+
+Generated Bootstrap UI should also use reasonable accessible markup.
+
+---
+
+# 40. PERFORMANCE
+The application should remain responsive for reasonably complex mockups.
+
+Target at least:
+
+- several hundred components per page
+
+Consider:
+
+- event delegation
+- efficient rendering
+- avoiding unnecessary full-canvas rerenders
+- debouncing property updates
+- efficient history storage
+
+Do not prematurely introduce excessive architectural complexity.
+
+---
+
+# 41. TESTING
+Create automated tests where practical.
+
+Document the testing approach.
+
+Test especially:
+
+- JSON serialization
+- JSON deserialization
+- project validation
+- migrations
+- component registry
+- hierarchy operations
+- undo/redo
+- copy/paste
+- property changes
+- export generation
+- containment rules
+
+If browser UI automation is practical, consider:
+
+- Playwright
+
+But remember that the deployed app itself must not require a server.
+
+Testing tooling may have different development-time requirements if clearly documented.
+
+---
+
+# 42. DEVELOPMENT TOOLS
+Development tooling may use:
+
+- npm
+- bundlers
+- test frameworks
+- linting
+- formatting
+
+However:
+
+The final application must not require Node.js/npm to run.
+
+A user should be able to download the release directory and open:
+
+`mockapp.html`
+
+directly.
+
+If a build process is used, document:
+
+```
+source development
+        ↓
+build
+        ↓
+release folder
+        ↓
+mockapp.html opened locally
+```
+
+---
+
+# 43. LINTING / FORMATTING
+Recommend and configure appropriate tooling.
+
+Examples:
+
+- ESLint
+- Prettier
+
+Do not add tools without a clear reason.
+
+Document development commands.
+
+---
+
+# 44. ERROR HANDLING
+Provide user-friendly error messages.
+
+Examples:
+
+- unsupported project version
+- invalid JSON
+- failed export
+- malformed component
+- autosave recovery problem
+- browser feature unavailable
+
+Technical stack traces should stay in developer console unless debug mode is enabled.
+
+---
+
+# 45. STATUS BAR
+Provide a compact bottom status bar.
+
+Useful information:
+
+- active page
+- viewport size
+- zoom level
+- selected component type
+- x/y where meaningful
+- width/height
+- snap status
+- grid status
+
+---
+
+# 46. CONTEXT MENU
+Provide right-click context menu for selected elements.
+
+Potential actions:
+
+- Cut
+- Copy
+- Paste
+- Duplicate
+- Delete
+- Bring Forward
+- Send Backward
+- Lock
+- Hide
+- Select Parent
+- Edit Properties
+
+---
+
+# 47. LOCKING
+Elements should optionally be locked.
+
+Locked elements:
+
+- cannot be moved
+- cannot be resized
+- cannot be accidentally edited
+
+They should remain selectable through the tree/layers panel if appropriate.
+
+---
+
+# 48. HIDE / SHOW
+Allow hiding components during editing.
+
+Hidden state should be clearly distinguished from Bootstrap responsive visibility.
+
+For example:
+
+- editor hidden
+- responsive hidden
+
+These are different concepts.
+
+---
+
+# 49. COMPONENT DUPLICATION
+Duplicate should:
+
+- clone selected component
+- clone descendants
+- generate new IDs
+- preserve property configuration
+- offset position slightly where applicable
+
+---
+
+# 50. COPY / PASTE
+Internal clipboard format should preserve:
+
+- hierarchy
+- descendant objects
+- relative positioning
+- Bootstrap settings
+- responsive settings
+
+When pasting:
+
+- generate new IDs
+- maintain relationships between pasted descendants
+
+Where practical, also support system clipboard integration.
+
+---
+
+# 51. MULTI-SELECTION
+Support:
+
+- Ctrl/Cmd + click
+- Shift + click if appropriate
+- selection rectangle
+- Select All
+
+Inspector behavior:
+
+If several selected components share a property, show the shared value.
+
+If values differ, indicate:
+
+`Mixed`
+
+Changing a shared property should apply it to all compatible selected components.
+
+This can be implemented later if necessary, but design for it.
+
+---
+
+# 52. UI THEMING
+The MockApp editor UI should be visually polished and professional.
+
+Use Bootstrap for the editor where sensible.
+
+However, avoid confusing editor Bootstrap styling with the actual mockup being designed.
+
+Consider a neutral editor chrome.
+
+A dark editor theme may be considered later.
+
+Do not make theming a blocker for the first version.
+
+---
+
+# 53. SETTINGS
+Provide an application settings dialog.
+
+Potential settings:
+
+- default grid size
+- snap enabled
+- default viewport
+- autosave interval
+- UI panel sizes
+- restore last session
+- show alignment guides
+- keyboard behavior
+
+Persist preferences locally.
+
+---
+
+# 54. PANEL RESIZING
+Left and right side panels should be resizable.
+
+Allow collapsing panels to maximize canvas area.
+
+Persist preferred widths locally.
+
+---
+
+# 55. COMPONENT FAVORITES
+Design so frequently used components can eventually be marked as favorites.
+
+Potential first-version support:
+
+- favorites category
+- recent components
+
+This is optional for MVP but architecture should not prevent it.
+
+---
+
+# 56. COMPOSITE COMPONENT MANAGEMENT
+Built-in composite components should be clearly separated from primitive Bootstrap components.
+
+Example categories:
+
+```
+Bootstrap Components
+Bootstrap Layout
+Forms
+Templates
+Composite Components
+```
+Future versions may allow users to create custom reusable components.
+
+Do not implement a full custom-component system unless it fits naturally into the initial architecture.
+
+---
+
+# 57. JSON VALIDATION
+Validate imported project files.
+
+Do not assume JSON structure is correct.
+
+Validation should detect:
+
+- missing version
+- missing required IDs
+- invalid parent references
+- duplicate IDs
+- unknown component types
+- invalid page references
+- malformed properties
+
+Recover where safely possible.
+
+Otherwise show meaningful errors.
+
+---
+
+# 58. PROJECT MIGRATIONS
+Design for format upgrades.
+
+Example:
+
+```
+migrateV1ToV2(project)
+migrateV2ToV3(project)
+```
+Keep migrations separate from normal loading logic.
+
+Document format changes.
+
+Never silently destroy unsupported data.
+
+---
+
+# 59. EXAMPLES
+Provide several example mockups.
+
+At least:
+
+- login
+- dashboard
+- form
+- admin/data table
+
+Store them as normal MockApp project files.
+
+Examples should test the real persistence format.
+
+---
+
+# 60. HELP
+Provide built-in Help/About information.
+
+At minimum:
+
+- application version
+- Bootstrap version
+- keyboard shortcuts
+- project website/repository placeholder
+- offline usage explanation
+
+---
+
+# 61. APPLICATION VERSION
+Create a central version definition.
+
+Do not duplicate the MockApp version across many files.
+
+Provide:
+
+- application version
+- project file format version
+- Bootstrap version
+
+Document where these live.
+
+---
+
+# 62. DEPENDENCY POLICY
+All runtime dependencies must be vendored locally.
+
+Do not depend on:
+
+- CDN
+- npm at runtime
+- external web fonts
+- external icon services
+- remote APIs
+
+Development dependencies are acceptable.
+
+Document:
+
+- dependency
+- version
+- license
+- purpose
+- source/update procedure
+
+Create:
+
+`docs/DEPENDENCIES.md`
+
+---
+
+# 63. THIRD-PARTY LICENSES
+Include required licenses/notices for vendored libraries.
+
+Create an appropriate:
+
+`THIRD_PARTY_NOTICES.md`
+
+if needed.
+
+---
+
+# 64. RELEASE DIRECTORY
+Consider maintaining a clean release directory, for example:
+
+```
+dist/
+    mockapp.html
+    css/
+    js/
+    vendor/
+    assets/
+```
+The user should be able to copy this directory anywhere and open:
+
+`mockapp.html`
+
+without installation.
+
+If browser file protocol restrictions make some architecture unsuitable, adjust the implementation accordingly.
+
+This requirement overrides framework convenience.
+
+---
+
+# 65. FILE:// COMPATIBILITY TEST
+Explicitly test the final product using:
+
+```
+file:///.../mockapp.html
+```
+Do not test only through localhost.
+
+Create a documented acceptance test confirming:
+
+- page loads
+- Bootstrap loads
+- icons load
+- drag/drop works
+- project open works
+- project save works
+- autosave works
+- export works
+- no required network calls occur
+
+Use browser developer tools network inspection to verify there are no required remote requests.
+
+---
+
+# 66. NETWORK-INDEPENDENCE ACCEPTANCE CRITERION
+After loading MockApp once from its local files, putting the machine in airplane mode must not prevent normal application operation.
+
+No runtime functionality should require internet access.
+
+---
+
+# 67. FIRST IMPLEMENTATION MILESTONE
+Do not attempt every feature at once.
+
+After architecture approval/design, implement in staged milestones.
+
+Recommended sequence:
+
+## Milestone 1 — Application shell
+
+- mockapp.html
+- local Bootstrap
+- local Bootstrap Icons
+- top toolbar
+- left panel
+- center canvas
+- right inspector
+- status bar
+- panel resizing
+
+## Milestone 2 — Component foundation
+
+- component registry
+- component palette
+- search
+- drag component to canvas
+- basic Bootstrap component rendering
+- selection
+
+## Milestone 3 — Editing
+
+- property inspector
+- move
+- resize
+- delete
+- duplicate
+- nested elements
+
+## Milestone 4 — Layout
+
+- containers
+- rows
+- columns
+- hierarchy tree
+- reparenting
+- responsive properties
+
+## Milestone 5 — Project persistence
+
+- project model
+- JSON save
+- JSON open
+- validation
+- autosave
+- recovery
+
+## Milestone 6 — Productivity
+
+- undo/redo
+- copy/paste
+- multi-select
+- keyboard shortcuts
+- context menu
+- alignment
+- snap/grid
+
+## Milestone 7 — Export
+
+- HTML
+- PNG
+- SVG
+- JSON clipboard
+
+## Milestone 8 — Polish
+
+- templates
+- preview
+- error handling
+- accessibility
+- documentation
+- performance
+- tests
+
+You may adjust the sequence if justified.
+
+---
+
+# 68. DEFINITION OF "ALL BOOTSTRAP CONTROLS"
+Create an explicit inventory based on the current official Bootstrap documentation.
+
+Do not rely on memory alone.
+
+Before implementation, build:
+
+`docs/COMPONENT_LIBRARY.md`
+
+Map each current Bootstrap component/form/layout concept to one of:
+
+- supported
+- supported as composite
+- represented visually
+- not applicable
+- planned later
+
+Include the reason where appropriate.
+
+This inventory becomes the source of truth for Bootstrap coverage.
+
+---
+
+# 69. COMPONENT INVENTORY STRUCTURE
+For each supported component document:
+
+```
+Component
+Category
+Bootstrap documentation category
+Palette name
+Properties
+Default state
+Allowed children
+Allowed parents
+Responsive properties
+Preview interactions
+HTML export behavior
+Implementation module
+```
+This documentation should align with the component registry.
+
+---
+
+# 70. BOOTSTRAP UPGRADE STRATEGY
+Document how to upgrade from one Bootstrap release to another.
+
+The intended procedure should resemble:
+
+1. update Bootstrap vendor files
+2. update Bootstrap Icons vendor files
+3. update version metadata
+4. review `COMPONENT_LIBRARY.md`
+5. identify newly added/removed/deprecated components
+6. update component registry
+7. run tests
+8. test examples
+9. test direct `file://` execution
+
+Keep MockApp's implementation sufficiently decoupled that Bootstrap upgrades do not require broad rewrites.
+
+---
+
+# 71. README
+The root README should explain:
+
+- what MockApp is
+- screenshots placeholder
+- how to launch
+- no installation required for users
+- supported browsers
+- offline behavior
+- how to open/save projects
+- how developers set up the project
+- project structure
+- documentation links
+
+---
+
+# 72. DEVELOPMENT DOCUMENTATION
+`docs/DEVELOPMENT.md` should explain:
+
+- required development tools
+- optional development tools
+- how to run tests
+- how to create a release
+- how to update Bootstrap
+- how source files relate to release files
+- debugging
+- browser testing
+
+---
+
+# 73. ARCHITECTURE DOCUMENT
+`docs/ARCHITECTURE.md` should include:
+
+- application overview
+- subsystem diagram
+- module ownership
+- event flow
+- project state
+- rendering lifecycle
+- component registry
+- property system
+- history system
+- persistence system
+- export system
+
+---
+
+# 74. DATA MODEL DOCUMENT
+`docs/DATA_MODEL.md` should document:
+
+- Project
+- Page
+- Component
+- Selection
+- ComponentDefinition
+- PropertyDefinition
+- Viewport
+- HistoryAction
+- UserPreferences
+
+Include examples.
+
+---
+
+# 75. DESIGN DOCUMENT
+`docs/DESIGN.md` should capture the visual/UX decisions made before implementation.
+
+Include:
+
+- application layout
+- palette behavior
+- canvas behavior
+- inspector behavior
+- component tree
+- dialogs
+- responsive workflows
+- preview mode
+- keyboard interactions
+
+Keep this file updated if major UX decisions change.
+
+---
+
+# 76. ROADMAP
+`docs/ROADMAP.md`
+
+Separate:
+
+- MVP
+- Version 1.x improvements
+- potential future features
+
+Potential future features may include:
+
+- user-defined reusable components
+- annotations
+- comments
+- design links between pages
+- prototype navigation
+- import Bootstrap HTML
+- external plugin model
+- themes
+- custom CSS
+- collaborative/cloud mode
+
+These are NOT required now unless otherwise specified.
+
+---
+
+# 77. DO NOT IMPLEMENT RAW HTML/CSS EDITING YET
+The first version must NOT expose unrestricted raw HTML/CSS/class editing in the property inspector.
+
+Architecture may allow this later.
+
+For now use structured fields only.
+
+This reduces corruption risk and keeps generated Bootstrap markup predictable.
+
+---
+
+# 78. IMPORTANT UX RULE
+MockApp should feel like a visual design application.
+
+Users should NOT need to know Bootstrap class syntax.
+
+For example:
+
+Instead of requiring:
+
+```
+col-md-6
+```
+provide:
+
+```
+Medium breakpoint width:
+[ 6 of 12 ▼ ]
+```
+Instead of:
+
+```
+btn-outline-danger
+```
+provide:
+
+```
+Style:
+[ Outline ]
+
+Variant:
+[ Danger ]
+```
+Generate the Bootstrap classes internally.
+
+---
+
+# 79. TOOLTIP / INLINE HELP
+Property labels should provide short help where a Bootstrap concept may not be obvious.
+
+Do not overwhelm the interface.
+
+Use concise tooltips/help icons.
+
+---
+
+# 80. DESIGN PHASE OUTPUT FORMAT
+Your FIRST response for this project must NOT contain production implementation code.
+
+Instead produce the following sections:
+
+1. Executive Summary
+2. Requirements Interpretation
+3. Key Technical Constraints
+4. Recommended Technology Stack
+5. Technology Alternatives and Tradeoffs
+6. Proposed Architecture
+7. Proposed Directory Structure
+8. Application UI Layout
+9. ASCII Visual Mockup
+10. Core Data Model
+11. Component Registry Design
+12. Property Inspector Design
+13. Canvas Interaction Model
+14. Save/Open Architecture
+15. Export Architecture
+16. Offline / `file://` Strategy
+17. Undo/Redo Strategy
+18. Testing Strategy
+19. Documentation Strategy
+20. AI Maintenance Strategy
+21. Bootstrap Upgrade Strategy
+22. Implementation Milestones
+23. Major Risks
+24. Open Technical Decisions
+25. Acceptance Criteria
+
+Create/update the corresponding documentation files for this design.
+
+Do NOT begin full implementation before completing this design phase.
+
+If a minor uncertainty exists, make a reasonable engineering decision and document it rather than blocking progress unnecessarily.
+
+---
+
+# 81. AFTER DESIGN PHASE
+After completing the architecture/design phase:
+
+Review the design for internal inconsistencies.
+
+Specifically check:
+
+- `file://` compatibility
+- Bootstrap local loading
+- JSON persistence
+- component hierarchy
+- page model
+- renderer architecture
+- undo/redo compatibility
+- export compatibility
+- modularity
+- source organization
+
+Then begin implementation milestone-by-milestone.
+
+Do not jump randomly between features.
+
+---
+
+# 82. BEFORE EVERY SIGNIFICANT CHANGE
+During later development sessions, follow this workflow:
+
+1. Read `AGENTS.md`.
+2. Read `docs/FILE_INDEX.md`.
+3. Identify the relevant subsystem.
+4. Read relevant architecture documentation if needed.
+5. Inspect only the relevant files first.
+6. Make the smallest coherent set of changes.
+7. Update/add tests.
+8. Update `FILE_INDEX.md` if responsibilities/files changed.
+9. Update documentation where behavior or architecture changed.
+10. Verify direct `file://` operation.
+
+This workflow is mandatory.
+
+---
+
+# 83. FILE HEADER POLICY
+For project-maintained source files, consider a short header comment where useful containing:
+
+- module purpose
+- primary responsibility
+- related subsystem
+
+Do not create huge comments duplicating `FILE_INDEX.md`.
+
+The canonical detailed explanation remains:
+
+`docs/FILE_INDEX.md`
+
+---
+
+# 84. CODE QUALITY
+Code should be:
+
+- readable
+- explicit
+- modular
+- predictable
+- well named
+- easy to debug
+
+Avoid:
+
+- clever one-liners
+- unnecessary abstraction
+- hidden side effects
+- giant functions
+- global mutable state
+- duplicated constants
+- magic strings
+- Bootstrap class strings scattered randomly throughout the application
+
+Centralize constants and reusable definitions where appropriate.
+
+---
+
+# 85. FUNCTION SIZE
+Prefer focused functions.
+
+If a function performs several unrelated tasks, split it.
+
+Names should describe intent.
+
+For example, prefer:
+
+```
+createComponentInstance()
+validateParentChildRelationship()
+serializeProject()
+restoreAutosave()
+renderPropertyEditor()
+```
+over generic names such as:
+
+```
+process()
+handle()
+doStuff()
+```
+where intent is unclear.
+
+---
+
+# 86. CENTRAL CONSTANTS
+Create central definitions for things such as:
+
+- MockApp version
+- project format version
+- supported Bootstrap version
+- breakpoints
+- default viewport sizes
+- grid size
+- local storage keys
+- application events
+
+Do not duplicate these values throughout the codebase.
+
+---
+
+# 87. DEBUG MODE
+Consider a development/debug mode.
+
+Potential diagnostics:
+
+- state inspection
+- selected component data
+- event logs
+- history stack
+- hierarchy validation
+
+Debug tooling must not clutter normal user mode.
+
+---
+
+# 88. VALIDATION / INVARIANTS
+Create internal validation utilities for important state invariants.
+
+Examples:
+
+- every component ID is unique
+- every non-root component has a valid parent
+- hierarchy contains no cycles
+- component types exist in registry
+- page IDs are unique
+
+Use these especially during development and import.
+
+---
+
+# 89. NO SERVER ASSUMPTIONS
+Never introduce functionality that assumes:
+
+```
+http://localhost
+```
+exists.
+
+If development tooling runs a server for convenience, that must not become a runtime dependency.
+
+Always test the actual release using `file://`.
+
+---
+
+# 90. FINAL ACCEPTANCE CRITERIA
+MockApp Version 1 should satisfy all of the following:
+
+- Launches by double-clicking `mockapp.html`.
+- Requires no web server.
+- Requires no internet connection.
+- Uses locally packaged Bootstrap.
+- Uses locally packaged Bootstrap Icons.
+- Uses latest stable Bootstrap available at implementation time.
+- Provides a professional draw.io-like editing layout.
+- Has searchable Bootstrap component palette.
+- Supports realistic Bootstrap rendering.
+- Supports nested layouts.
+- Supports Bootstrap containers/rows/columns.
+- Supports drag/drop.
+- Supports move.
+- Supports resize.
+- Supports selection.
+- Supports multi-selection.
+- Supports copy/paste.
+- Supports duplicate.
+- Supports delete.
+- Supports undo/redo.
+- Supports zoom.
+- Supports pan.
+- Supports grid.
+- Supports snap.
+- Supports alignment guides.
+- Supports z-order where applicable.
+- Supports hierarchy/tree view.
+- Supports responsive viewports.
+- Supports Bootstrap breakpoint settings.
+- Supports structured property editing.
+- Does not require raw HTML/CSS editing.
+- Saves MockApp JSON.
+- Opens MockApp JSON.
+- Autosaves locally.
+- Supports recovery.
+- Exports HTML.
+- Exports PNG.
+- Exports SVG where technically reasonable.
+- Supports JSON clipboard export.
+- Has Preview mode.
+- Includes example projects.
+- Includes automated tests for core non-visual behavior.
+- Includes `AGENTS.md`.
+- Includes comprehensive `docs/FILE_INDEX.md`.
+- Keeps `FILE_INDEX.md` synchronized with source layout.
+- Includes architecture/design/data model documentation.
+- Includes Bootstrap component coverage documentation.
+- Includes dependency/version documentation.
+- Includes Bootstrap upgrade instructions.
+- Contains no required remote runtime dependencies.
+- Works while offline.
+- Has no major console errors during normal use.
+
+---
+
+# 91. START NOW
+Begin ONLY with the architecture/design phase.
+
+Do not write the full application yet.
+
+First analyze the requirements, make technical decisions, produce the visual proposal, architecture, data model, directory structure, documentation strategy, and implementation roadmap.
+
+Pay particular attention to the requirement that the application must work when `mockapp.html` is opened directly using the browser `file://` protocol while still remaining highly modular and split across many maintainable files.
+
+Also prioritize the AI-maintenance workflow around:
+
+`AGENTS.md`
+
+and:
+
+`docs/FILE_INDEX.md`
+
+These should make it possible for future AI coding sessions to identify which file needs modification without reading or scanning the entire repository.

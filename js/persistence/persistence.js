@@ -2,6 +2,18 @@
   var constants = MockApp.app.constants;
   var utils = MockApp.utils;
   var projectData = MockApp.data.project;
+  var pendingAutosave = null;
+  var writeAutosaveDebounced = utils.debounce(function (serialized) {
+    pendingAutosave = null;
+    localStorage.setItem(constants.STORAGE_KEYS.AUTOSAVE, serialized);
+  }, 500);
+
+  window.addEventListener("beforeunload", function () {
+    if (pendingAutosave != null) {
+      localStorage.setItem(constants.STORAGE_KEYS.AUTOSAVE, pendingAutosave);
+      pendingAutosave = null;
+    }
+  });
 
   function loadAutosave() {
     try {
@@ -19,7 +31,8 @@
   }
 
   function saveAutosave(project) {
-    localStorage.setItem(constants.STORAGE_KEYS.AUTOSAVE, JSON.stringify(project, null, 2));
+    pendingAutosave = JSON.stringify(project);
+    writeAutosaveDebounced(pendingAutosave);
   }
 
   function clearAutosave() {
@@ -35,7 +48,7 @@
   }
 
   function savePreferences(preferences) {
-    localStorage.setItem(constants.STORAGE_KEYS.PREFERENCES, JSON.stringify(preferences, null, 2));
+    localStorage.setItem(constants.STORAGE_KEYS.PREFERENCES, JSON.stringify(preferences));
   }
 
   function loadRecents() {
@@ -57,12 +70,12 @@
       updatedAt: new Date().toISOString()
     });
 
-    localStorage.setItem(constants.STORAGE_KEYS.RECENTS, JSON.stringify(recents.slice(0, 8), null, 2));
+    localStorage.setItem(constants.STORAGE_KEYS.RECENTS, JSON.stringify(recents.slice(0, 8)));
   }
 
   function saveProject(controller, saveAs) {
     var fileName = (projectFileName(controller.state.project) || "mockapp-project") + ".mockapp.json";
-    var serialized = JSON.stringify(controller.state.project, null, 2);
+    var serialized = JSON.stringify(controller.state.project);
 
     if (!saveAs && controller.state.fileHandle && window.showSaveFilePicker) {
       return writeToHandle(controller.state.fileHandle, serialized).then(function () {

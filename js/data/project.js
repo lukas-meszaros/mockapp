@@ -67,6 +67,49 @@
   }
 
   function createTemplate(kind) {
+    function makeInput(label, inputType, placeholder) {
+      var input = createComponent("form.input");
+      input.name = label;
+      input.props.label = label;
+      input.props.inputType = inputType || "text";
+      if (placeholder) {
+        input.props.placeholder = placeholder;
+      }
+      return input;
+    }
+
+    function makeHeading(text, level, name) {
+      var heading = createComponent("content.heading");
+      heading.name = name || "Heading";
+      heading.props.text = text || "Section Title";
+      heading.props.level = String(level || "2");
+      return heading;
+    }
+
+    function makeParagraph(name, text, lead) {
+      var paragraph = createComponent("content.paragraph");
+      paragraph.name = name || "Paragraph";
+      paragraph.props.text = text || "Describe this section.";
+      paragraph.props.lead = !!lead;
+      return paragraph;
+    }
+
+    function makeButton(name, text, outline) {
+      var button = createComponent("action.button");
+      button.name = name || "Button";
+      button.props.text = text || "Button";
+      button.props.outline = !!outline;
+      return button;
+    }
+
+    function makeCard(name, title, body) {
+      var card = createComponent("content.card");
+      card.name = name || "Card";
+      card.props.title = title || "Card title";
+      card.props.text = body || "Card body text";
+      return card;
+    }
+
     if (kind === "login") {
       var container = createComponent("layout.container");
       container.name = "Login Layout";
@@ -89,6 +132,269 @@
       row.children.push(column);
       container.children.push(row);
       return container;
+    }
+
+    switch (kind) {
+      case "container-fluid": {
+        var fluid = createComponent("layout.container");
+        fluid.name = "Fluid Container";
+        fluid.props.fluid = true;
+        return fluid;
+      }
+      case "stack": {
+        var stack = createComponent("layout.container");
+        stack.name = "Stack";
+        stack.props.gap = "2";
+        stack.children.push(makeParagraph("Stack Item", "Stack item", false));
+        stack.children.push(makeParagraph("Stack Item", "Stack item", false));
+        return stack;
+      }
+      case "horizontal-stack": {
+        var hRow = createComponent("layout.row");
+        hRow.name = "Horizontal Stack";
+        var hLeft = createComponent("layout.column");
+        var hRight = createComponent("layout.column");
+        hLeft.children.push(makeParagraph("Stack Item", "Item A", false));
+        hRight.children.push(makeParagraph("Stack Item", "Item B", false));
+        hRow.children.push(hLeft, hRight);
+        return hRow;
+      }
+      case "divider":
+        return makeParagraph("Divider", "------------------------------", false);
+      case "spacer": {
+        var spacer = makeParagraph("Spacer", " ", false);
+        spacer.props.marginBottom = "5";
+        return spacer;
+      }
+      case "heading-h1":
+        return makeHeading("Heading 1", 1, "Heading H1");
+      case "heading-h2":
+        return makeHeading("Heading 2", 2, "Heading H2");
+      case "heading-h3":
+        return makeHeading("Heading 3", 3, "Heading H3");
+      case "heading-h4":
+        return makeHeading("Heading 4", 4, "Heading H4");
+      case "heading-h5":
+        return makeHeading("Heading 5", 5, "Heading H5");
+      case "heading-h6":
+        return makeHeading("Heading 6", 6, "Heading H6");
+      case "lead-paragraph":
+        return makeParagraph("Lead Paragraph", "Lead paragraph text", true);
+      case "small-text":
+        return makeParagraph("Small Text", "Small helper text", false);
+      case "blockquote":
+        return makeParagraph("Blockquote", '"Meaningful quote text"', false);
+      case "code-text":
+        return makeParagraph("Code", "const value = true;", false);
+      case "preformatted":
+        return makeParagraph("Preformatted", "line 1\nline 2\nline 3", false);
+      case "outline-button":
+        return makeButton("Outline Button", "Outline", true);
+      case "button-group": {
+        var group = createComponent("layout.row");
+        group.name = "Button Group";
+        group.children.push(createComponent("layout.column"));
+        group.children[0].children.push(makeButton("Button", "Left", false));
+        group.children[0].children.push(makeButton("Button", "Middle", false));
+        group.children[0].children.push(makeButton("Button", "Right", false));
+        return group;
+      }
+      case "button-toolbar": {
+        var toolbar = createComponent("layout.container");
+        toolbar.name = "Button Toolbar";
+        toolbar.children.push(makeButton("Button", "Save", false));
+        toolbar.children.push(makeButton("Button", "Export", true));
+        return toolbar;
+      }
+      case "close-button":
+        return makeButton("Close Button", "x", false);
+      case "input-email":
+        return makeInput("Email", "email", "name@example.com");
+      case "input-password":
+        return makeInput("Password", "password", "Password");
+      case "input-number":
+        return makeInput("Number", "number", "0");
+      case "input-search":
+        return makeInput("Search", "search", "Search");
+      case "input-tel":
+        return makeInput("Telephone", "tel", "+1 555 0100");
+      case "input-url":
+        return makeInput("URL", "url", "https://example.com");
+      case "multi-select": {
+        var multi = createComponent("form.select");
+        multi.name = "Multi-select";
+        multi.props.multiple = true;
+        return multi;
+      }
+      case "radio-button": {
+        var radio = createComponent("form.radio");
+        radio.name = "Radio Button";
+        radio.props.label = "Choice";
+        return radio;
+      }
+      case "switch": {
+        var sw = createComponent("form.switch");
+        sw.name = "Switch";
+        sw.props.label = "Enable option";
+        return sw;
+      }
+      case "range":
+        return makeInput("Range", "number", "50");
+      case "file-input":
+        return makeInput("File", "text", "Choose file");
+      case "input-group": {
+        var inputGroup = createComponent("layout.row");
+        inputGroup.name = "Input Group";
+        var inputCol = createComponent("layout.column");
+        var actionCol = createComponent("layout.column");
+        inputCol.props.widths = { xs: "8", sm: "8", md: "9", lg: "9", xl: "9", xxl: "9" };
+        actionCol.props.widths = { xs: "4", sm: "4", md: "3", lg: "3", xl: "3", xxl: "3" };
+        inputCol.children.push(makeInput("Input", "text", "Value"));
+        actionCol.children.push(makeButton("Button", "Go", false));
+        inputGroup.children.push(inputCol, actionCol);
+        return inputGroup;
+      }
+      case "floating-label": {
+        var floating = makeInput("Floating Label", "text", "Floating Label");
+        floating.name = "Floating Label";
+        return floating;
+      }
+      case "form-group": {
+        var formGroup = makeCard("Form Group", "Form Group", "Grouped form controls");
+        formGroup.children.push(makeInput("First Name", "text", "Jane"));
+        formGroup.children.push(makeInput("Email", "email", "name@example.com"));
+        return formGroup;
+      }
+      case "validation-state": {
+        var validation = makeInput("Validated Input", "text", "Required field");
+        validation.props.required = true;
+        return validation;
+      }
+      case "nav": {
+        var nav = createComponent("nav.navbar");
+        nav.name = "Nav";
+        nav.props.brand = "Navigation";
+        nav.props.linksText = "Home\nProducts\nContact";
+        return nav;
+      }
+      case "tabs": {
+        var tabs = createComponent("nav.navbar");
+        tabs.name = "Tabs";
+        tabs.props.brand = "Tabs";
+        tabs.props.linksText = "Overview\nDetails\nSettings";
+        return tabs;
+      }
+      case "pills": {
+        var pills = createComponent("nav.navbar");
+        pills.name = "Pills";
+        pills.props.brand = "Pills";
+        pills.props.linksText = "Active\nInactive\nArchived";
+        return pills;
+      }
+      case "breadcrumb":
+        return makeParagraph("Breadcrumb", "Home / Dashboard / Users", false);
+      case "pagination":
+        return makeParagraph("Pagination", "Prev 1 2 3 Next", false);
+      case "dropdown":
+        return makeButton("Dropdown", "Dropdown v", false);
+      case "dropdown-button":
+        return makeButton("Dropdown Button", "Actions v", false);
+      case "offcanvas-navigation": {
+        var offcanvas = makeCard("Offcanvas Navigation", "Menu", "Navigation links");
+        offcanvas.children.push(makeParagraph("Item", "Dashboard", false));
+        offcanvas.children.push(makeParagraph("Item", "Users", false));
+        return offcanvas;
+      }
+      case "list-group": {
+        var list = makeCard("List Group", "Items", "Item 1\nItem 2\nItem 3");
+        return list;
+      }
+      case "responsive-table": {
+        var responsiveTable = createComponent("data.table");
+        responsiveTable.name = "Responsive Table";
+        return responsiveTable;
+      }
+      case "image":
+        return makeParagraph("Image", "[Image Placeholder]", false);
+      case "figure":
+        return makeParagraph("Figure", "[Figure Placeholder] Caption", false);
+      case "progress":
+        return makeParagraph("Progress", "Progress: 60%", false);
+      case "spinner":
+        return makeParagraph("Spinner", "Loading...", false);
+      case "toast":
+        return makeCard("Toast", "Notification", "Task completed successfully.");
+      case "placeholder":
+        return makeParagraph("Placeholder", "Loading placeholder content", false);
+      case "modal":
+        return makeCard("Modal", "Modal Title", "Modal body content");
+      case "accordion":
+        return makeCard("Accordion", "Accordion Item", "Accordion body");
+      case "collapse":
+        return makeCard("Collapse", "Collapsible Section", "Hidden content");
+      case "carousel":
+        return makeCard("Carousel", "Slide 1", "Carousel preview");
+      case "tooltip":
+        return makeParagraph("Tooltip Representation", "Button [tooltip text]", false);
+      case "popover":
+        return makeParagraph("Popover Representation", "Button [popover content]", false);
+      case "registration-form": {
+        var registration = makeCard("Registration Form", "Create account", "Join MockApp");
+        registration.children.push(makeInput("Full Name", "text", "Alex Doe"));
+        registration.children.push(makeInput("Email", "email", "alex@example.com"));
+        registration.children.push(makeInput("Password", "password", "Password"));
+        registration.children.push(makeButton("Button", "Register", false));
+        return registration;
+      }
+      case "search-bar":
+        return createTemplate("input-group");
+      case "header": {
+        var header = createComponent("nav.navbar");
+        header.name = "Header";
+        header.props.brand = "Page Header";
+        header.props.linksText = "Overview\nFeatures\nContact";
+        return header;
+      }
+      case "footer":
+        return makeParagraph("Footer", "Footer content", false);
+      case "sidebar-navigation":
+        return createTemplate("offcanvas-navigation");
+      case "metric-card":
+        return makeCard("Dashboard Metric Card", "Visitors", "24,918");
+      case "toolbar-template":
+        return createTemplate("button-toolbar");
+      case "filter-bar":
+        return createTemplate("input-group");
+      case "data-table-template":
+        return createTemplate("responsive-table");
+      case "settings-form": {
+        var settings = makeCard("Settings Form", "Settings", "Configure options");
+        settings.children.push(makeInput("Site Name", "text", "MockApp"));
+        settings.children.push(createComponent("form.checkbox"));
+        return settings;
+      }
+      case "contact-form": {
+        var contact = makeCard("Contact Form", "Contact Us", "Send us a message");
+        contact.children.push(makeInput("Email", "email", "name@example.com"));
+        contact.children.push(createComponent("form.textarea"));
+        contact.children.push(makeButton("Button", "Send", false));
+        return contact;
+      }
+      case "profile-card":
+        return makeCard("Profile Card", "User Name", "Role and short bio");
+      case "empty-state":
+        return makeCard("Empty State", "No results", "Try adjusting your filters.");
+      case "confirmation-dialog":
+        return makeCard("Confirmation Dialog", "Confirm Action", "Are you sure you want to continue?");
+      case "hero-section": {
+        var hero = makeCard("Hero Section", "Build faster with MockApp", "Design responsive UI mockups offline.");
+        hero.children.push(makeButton("Button", "Get Started", false));
+        return hero;
+      }
+      case "admin-layout":
+        return createTemplate("dashboard");
+      default:
+        break;
     }
 
     var dashboard = createComponent("layout.container");
@@ -176,7 +482,25 @@
     });
   }
 
-  function findComponentContext(page, componentId) {
+  function buildContextIndex(page) {
+    var index = Object.create(null);
+
+    function visit(node, parent, childIndex) {
+      index[node.id] = { node: node, parent: parent, index: childIndex };
+      (node.children || []).forEach(function (child, nextIndex) {
+        visit(child, node, nextIndex);
+      });
+    }
+
+    visit(page.root, null, -1);
+    return index;
+  }
+
+  function findComponentContext(page, componentId, contextIndex) {
+    if (contextIndex && contextIndex[componentId]) {
+      return contextIndex[componentId];
+    }
+
     var context = null;
 
     function visit(node, parent, index) {
@@ -197,8 +521,8 @@
     return context;
   }
 
-  function insertComponent(page, parentId, component, index, placement) {
-    var parentContext = parentId ? findComponentContext(page, parentId) : null;
+  function insertComponent(page, parentId, component, index, placement, contextIndex) {
+    var parentContext = parentId ? findComponentContext(page, parentId, contextIndex) : null;
     var parentNode = parentContext ? parentContext.node : page.root;
 
     if (!registry.canAcceptChild(parentNode.type, component.type)) {
@@ -238,8 +562,8 @@
     return base;
   }
 
-  function removeComponent(page, componentId) {
-    var context = findComponentContext(page, componentId);
+  function removeComponent(page, componentId, contextIndex) {
+    var context = findComponentContext(page, componentId, contextIndex);
     if (!context || !context.parent) {
       return null;
     }
@@ -247,8 +571,8 @@
     return context.parent.children.splice(context.index, 1)[0] || null;
   }
 
-  function updateComponent(page, componentId, updater) {
-    var context = findComponentContext(page, componentId);
+  function updateComponent(page, componentId, updater, contextIndex) {
+    var context = findComponentContext(page, componentId, contextIndex);
     if (!context) {
       return null;
     }
@@ -269,13 +593,13 @@
     return clone;
   }
 
-  function moveComponent(page, componentId, targetParentId, placement) {
-    var context = findComponentContext(page, componentId);
+  function moveComponent(page, componentId, targetParentId, placement, contextIndex) {
+    var context = findComponentContext(page, componentId, contextIndex);
     if (!context || !context.parent) {
       return false;
     }
 
-    var targetContext = targetParentId ? findComponentContext(page, targetParentId) : null;
+    var targetContext = targetParentId ? findComponentContext(page, targetParentId, contextIndex) : null;
     var targetNode = targetContext ? targetContext.node : page.root;
 
     if (componentId === targetNode.id || containsDescendant(context.node, targetNode.id)) {
@@ -301,8 +625,8 @@
     return true;
   }
 
-  function updateComponentFrame(page, componentId, frame) {
-    var context = findComponentContext(page, componentId);
+  function updateComponentFrame(page, componentId, frame, contextIndex) {
+    var context = findComponentContext(page, componentId, contextIndex);
     if (!context) {
       return null;
     }
@@ -362,6 +686,7 @@
     getActivePage: getActivePage,
     normalizeProject: normalizeProject,
     walkComponents: walkComponents,
+    buildContextIndex: buildContextIndex,
     findComponentContext: findComponentContext,
     insertComponent: insertComponent,
     removeComponent: removeComponent,

@@ -57,6 +57,18 @@
             <div class="dropdown topbar-dropdown">
               <button type="button" class="menu-button dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Arrange</button>
               <div class="dropdown-menu topbar-dropdown-menu">
+                <button type="button" class="dropdown-item" data-action="align-left"><i class="bi bi-align-start"></i>Align Left</button>
+                <button type="button" class="dropdown-item" data-action="align-center"><i class="bi bi-align-center"></i>Align Center</button>
+                <button type="button" class="dropdown-item" data-action="align-right"><i class="bi bi-align-end"></i>Align Right</button>
+                <button type="button" class="dropdown-item" data-action="align-top"><i class="bi bi-align-top"></i>Align Top</button>
+                <button type="button" class="dropdown-item" data-action="align-middle"><i class="bi bi-align-middle"></i>Align Middle</button>
+                <button type="button" class="dropdown-item" data-action="align-bottom"><i class="bi bi-align-bottom"></i>Align Bottom</button>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="dropdown-item" data-action="layer-above"><i class="bi bi-arrow-up"></i>Move Above</button>
+                <button type="button" class="dropdown-item" data-action="layer-below"><i class="bi bi-arrow-down"></i>Move Below</button>
+                <button type="button" class="dropdown-item" data-action="layer-top"><i class="bi bi-chevron-double-up"></i>Move To Top</button>
+                <button type="button" class="dropdown-item" data-action="layer-bottom"><i class="bi bi-chevron-double-down"></i>Move To Bottom</button>
+                <div class="dropdown-divider"></div>
                 <button type="button" class="dropdown-item" data-action="duplicate"><i class="bi bi-copy"></i>Duplicate Selection</button>
                 <button type="button" class="dropdown-item" data-action="delete"><i class="bi bi-trash"></i>Delete Selection</button>
               </div>
@@ -124,6 +136,7 @@
         <div class="splitter splitter-left" data-side="left"></div>
 
         <section class="canvas-panel">
+          <button type="button" class="preview-exit-button" data-action="exit-preview"><i class="bi bi-x-circle"></i>Exit Preview</button>
           <div class="canvas-topbar">
             <div>
               <strong>Canvas</strong>

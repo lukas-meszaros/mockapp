@@ -99,7 +99,7 @@ Do NOT modify when: A helper is feature-local and belongs in its owning module.
 ## js/app/controller.js
 Purpose: Central action controller.
 Subsystem: Application control.
-Responsibilities: Owns app state, mutation flow, autosave updates, history integration, high-level user commands.
+Responsibilities: Owns app state, mutation flow, autosave updates, history integration, high-level user commands, multi-selection management, root alignment commands, and root layering commands.
 Depends on: `js/data/project.js`, `js/history/history.js`, `js/persistence/persistence.js`, `js/export/exporters.js`, `js/ui/*`.
 Modify when: Adding or changing top-level user actions or state transitions.
 Do NOT modify when: A change is limited to presentation markup or styling.
@@ -155,7 +155,7 @@ Do NOT modify when: Changing toolbar bindings only.
 ## js/ui/shell.js
 Purpose: Shared shell helpers.
 Subsystem: UI shell.
-Responsibilities: DOM refs, tab activation, status bar updates, dialog control, toasts, panel splitters, viewport shell updates.
+Responsibilities: DOM refs, tab activation, status bar updates, dialog control (including custom modal-body renderers), toasts, panel splitters, viewport shell updates.
 Depends on: `mockapp.html`, `css/layout.css`, `css/dialogs.css`.
 Modify when: Changing shell-level UI behavior.
 Do NOT modify when: A change is isolated to palette or inspector field generation.
@@ -163,7 +163,7 @@ Do NOT modify when: A change is isolated to palette or inspector field generatio
 ## js/ui/sidebar.js
 Purpose: Left panel renderer.
 Subsystem: Sidebar UI.
-Responsibilities: Renders palette groups, page list, and hierarchy tree; handles tree drop behavior.
+Responsibilities: Renders palette groups, page list, and hierarchy tree; handles tree drop behavior and root-layer ordering actions.
 Depends on: `js/components/registry.js`, `js/data/project.js`.
 Modify when: Changing left-panel tabs or hierarchy presentation.
 Do NOT modify when: Changing data model invariants.
@@ -171,7 +171,7 @@ Do NOT modify when: Changing data model invariants.
 ## js/ui/inspector.js
 Purpose: Structured property inspector renderer.
 Subsystem: Inspector UI.
-Responsibilities: Renders page settings, component fields, root-level frame controls, and action controls from registry schema.
+Responsibilities: Renders page settings, component fields, root-level frame controls, action controls from registry schema, and advanced designers (for example table and toolbar modals) for complex components.
 Depends on: `js/components/registry.js`, `js/data/project.js`, `js/app/utils.js`.
 Modify when: Changing property editing UX.
 Do NOT modify when: Adding low-level project traversal helpers.
@@ -179,7 +179,7 @@ Do NOT modify when: Adding low-level project traversal helpers.
 ## js/ui/canvas.js
 Purpose: Canvas renderer.
 Subsystem: Canvas UI.
-Responsibilities: Renders nested component nodes, freeform root placement, pointer-drag movement, drop surfaces, alignment guides, selection chrome, and quick actions.
+Responsibilities: Renders nested component nodes, freeform root placement, pointer-drag movement, drop surfaces, alignment guides, selection chrome, quick actions, live preview rendering, and marquee-based multi-selection. Includes interaction-smoothing behavior for drag/resize operations.
 Depends on: `js/data/project.js`, `js/components/registry.js`, `js/export/exporters.js`.
 Modify when: Changing canvas composition, freeform dragging, snapping, or drag/drop targets.
 Do NOT modify when: Changing export-only markup or persisted format rules.

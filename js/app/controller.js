@@ -26,6 +26,7 @@
         ui: {
           activeTab: "palette",
           paletteFilter: "",
+          paletteCollapsed: utils.deepClone(preferences.paletteCollapsed || {}),
           preview: false,
           inlineEdit: null,
           zoom: preferences.zoom || 1,
@@ -67,19 +68,48 @@
       inspector.renderInspector(controller);
       restoreInspectorFocus(controller, inspectorFocus);
       shell.updateStatus(controller.refs, controller.state, countComponents(activePage.root), selectionLabel(controller));
-      persistence.savePreferences({ zoom: controller.state.ui.zoom, panelWidths: controller.state.ui.panelWidths });
     };
 
     controller.actions.selectOnly = function (componentId) {
       controller.state.selection.ids = componentId ? [componentId] : [];
-      controller.actions.render();
+      renderSelectionViews(controller);
+    };
+
+    controller.actions.setSelection = function (componentIds, append) {
+      var incoming = Array.isArray(componentIds) ? componentIds : [];
+      if (append) {
+        var map = Object.create(null);
+        controller.state.selection.ids.concat(incoming).forEach(function (id) {
+          if (id) {
+            map[id] = true;
+          }
+        });
+        controller.state.selection.ids = Object.keys(map);
+      } else {
+        controller.state.selection.ids = incoming.filter(Boolean);
+      }
+      renderSelectionViews(controller);
+    };
+
+    controller.actions.toggleSelection = function (componentId) {
+      if (!componentId) {
+        return;
+      }
+      var index = controller.state.selection.ids.indexOf(componentId);
+      if (index >= 0) {
+        controller.state.selection.ids.splice(index, 1);
+      } else {
+        controller.state.selection.ids.push(componentId);
+      }
+      renderSelectionViews(controller);
     };
 
     controller.actions.addComponent = function (type, parentId) {
       commitProjectChange(controller, function (project) {
         var page = projectData.getActivePage(project);
         var component = projectData.createComponent(type);
-        projectData.insertComponent(page, parentId, component);
+        var contextIndex = parentId ? projectData.buildContextIndex(page) : null;
+        projectData.insertComponent(page, parentId, component, null, null, contextIndex);
         controller.state.selection.ids = [component.id];
       }, "Component added");
     };
@@ -99,7 +129,8 @@
       }
       commitProjectChange(controller, function (project) {
         var page = projectData.getActivePage(project);
-        var moved = projectData.moveComponent(page, componentId, targetParentId, placement);
+        var contextIndex = projectData.buildContextIndex(page);
+        var moved = projectData.moveComponent(page, componentId, targetParentId, placement, contextIndex);
         if (!moved) {
           throw new Error("That component cannot be dropped there.");
         }
@@ -110,7 +141,8 @@
     controller.actions.setComponentFrame = function (componentId, frame) {
       commitProjectChange(controller, function (project) {
         var page = projectData.getActivePage(project);
-        var updated = projectData.updateComponentFrame(page, componentId, frame);
+        var contextIndex = projectData.buildContextIndex(page);
+        var updated = projectData.updateComponentFrame(page, componentId, frame, contextIndex);
         if (!updated) {
           throw new Error("Unable to position component.");
         }
@@ -121,9 +153,18 @@
     controller.actions.updateComponentField = function (componentId, path, value) {
       commitProjectChange(controller, function (project) {
         var page = projectData.getActivePage(project);
+        var contextIndex = projectData.buildContextIndex(page);
+        var didUpdate = false;
         projectData.updateComponent(page, componentId, function (component) {
+          if (utils.getByPath(component, path) === value) {
+            return;
+          }
           utils.setByPath(component, path, value);
-        });
+          didUpdate = true;
+        }, contextIndex);
+        if (!didUpdate) {
+          return false;
+        }
         controller.state.selection.ids = [componentId];
       }, "Component updated", true);
     };
@@ -131,9 +172,10 @@
     controller.actions.updateComponentData = function (componentId, updater, successLabel) {
       commitProjectChange(controller, function (project) {
         var page = projectData.getActivePage(project);
+        var contextIndex = projectData.buildContextIndex(page);
         projectData.updateComponent(page, componentId, function (component) {
           updater(component);
-        });
+        }, contextIndex);
         controller.state.selection.ids = [componentId];
       }, successLabel || "Component updated", true);
     };
@@ -157,7 +199,8 @@
       }
       commitProjectChange(controller, function (project) {
         var page = projectData.getActivePage(project);
-        var context = projectData.findComponentContext(page, controller.state.selection.ids[0]);
+        var contextIndex = projectData.buildContextIndex(page);
+        var context = projectData.findComponentContext(page, controller.state.selection.ids[0], contextIndex);
         if (!context || !context.parent) {
           return;
         }
@@ -176,7 +219,7 @@
         return;
       }
       var page = projectData.getActivePage(controller.state.project);
-      var context = projectData.findComponentContext(page, controller.state.selection.ids[0]);
+      var context = projectData.findComponentContext(page, controller.state.selection.ids[0], projectData.buildContextIndex(page));
       if (!context) {
         return;
       }
@@ -193,9 +236,131 @@
         var page = projectData.getActivePage(project);
         var pasted = projectData.cloneComponentTree(controller.state.clipboard);
         var selectedId = controller.state.selection.ids[0] || null;
-        projectData.insertComponent(page, selectedId, pasted);
+        projectData.insertComponent(page, selectedId, pasted, null, null, projectData.buildContextIndex(page));
         controller.state.selection.ids = [pasted.id];
       }, "Component pasted");
+    };
+
+    controller.actions.selectAll = function () {
+      var page = projectData.getActivePage(controller.state.project);
+      var ids = [];
+      projectData.walkComponents(page.root, function (component) {
+        ids.push(component.id);
+      });
+      controller.state.selection.ids = ids;
+      renderSelectionViews(controller);
+    };
+
+    controller.actions.alignSelection = function (mode) {
+      commitProjectChange(controller, function (project) {
+        var page = projectData.getActivePage(project);
+        var selected = getSelectedRootComponents(page, controller.state.selection.ids);
+        if (selected.length < 2) {
+          return false;
+        }
+
+        var bounds = selectionBounds(selected);
+        var changed = false;
+
+        selected.forEach(function (entry) {
+          var frame = entry.frame;
+          var nextFrame = {
+            x: frame.x,
+            y: frame.y,
+            width: frame.width,
+            height: frame.height
+          };
+
+          if (mode === "left") {
+            nextFrame.x = bounds.left;
+          } else if (mode === "center") {
+            nextFrame.x = Math.round(bounds.centerX - frame.width / 2);
+          } else if (mode === "right") {
+            nextFrame.x = bounds.right - frame.width;
+          } else if (mode === "top") {
+            nextFrame.y = bounds.top;
+          } else if (mode === "middle") {
+            nextFrame.y = Math.round(bounds.centerY - frame.height / 2);
+          } else if (mode === "bottom") {
+            nextFrame.y = bounds.bottom - frame.height;
+          }
+
+          if (nextFrame.x !== frame.x || nextFrame.y !== frame.y) {
+            entry.component.frame.x = nextFrame.x;
+            entry.component.frame.y = nextFrame.y;
+            changed = true;
+          }
+        });
+
+        return changed;
+      }, "Selection aligned");
+    };
+
+    controller.actions.layerSelection = function (direction) {
+      commitProjectChange(controller, function (project) {
+        var page = projectData.getActivePage(project);
+        var children = page.root.children || [];
+        if (!children.length || !controller.state.selection.ids.length) {
+          return false;
+        }
+
+        var selectedMap = Object.create(null);
+        controller.state.selection.ids.forEach(function (id) {
+          selectedMap[id] = true;
+        });
+
+        var changed = false;
+        if (direction === "forward") {
+          for (var i = children.length - 2; i >= 0; i -= 1) {
+            if (selectedMap[children[i].id] && !selectedMap[children[i + 1].id]) {
+              var forwardItem = children[i];
+              children[i] = children[i + 1];
+              children[i + 1] = forwardItem;
+              changed = true;
+            }
+          }
+        } else if (direction === "backward") {
+          for (var j = 1; j < children.length; j += 1) {
+            if (selectedMap[children[j].id] && !selectedMap[children[j - 1].id]) {
+              var backwardItem = children[j];
+              children[j] = children[j - 1];
+              children[j - 1] = backwardItem;
+              changed = true;
+            }
+          }
+        } else if (direction === "front") {
+          var keptFront = children.filter(function (item) {
+            return !selectedMap[item.id];
+          });
+          var movedFront = children.filter(function (item) {
+            return selectedMap[item.id];
+          });
+          if (movedFront.length && movedFront.length !== children.length) {
+            page.root.children = keptFront.concat(movedFront);
+            changed = true;
+          }
+        } else if (direction === "back") {
+          var movedBack = children.filter(function (item) {
+            return selectedMap[item.id];
+          });
+          var keptBack = children.filter(function (item) {
+            return !selectedMap[item.id];
+          });
+          if (movedBack.length && movedBack.length !== children.length) {
+            page.root.children = movedBack.concat(keptBack);
+            changed = true;
+          }
+        }
+
+        if (!changed) {
+          return false;
+        }
+
+        controller.state.selection.ids = controller.state.selection.ids.filter(function (id) {
+          return !!selectedMap[id];
+        });
+        return true;
+      }, "Layer order updated");
     };
 
     controller.actions.undo = function () {
@@ -280,7 +445,12 @@
     };
 
     controller.actions.setZoom = function (value) {
-      controller.state.ui.zoom = Math.max(0.6, Math.min(1.6, value));
+      var nextZoom = Math.max(0.6, Math.min(1.6, value));
+      if (controller.state.ui.zoom === nextZoom) {
+        return;
+      }
+      controller.state.ui.zoom = nextZoom;
+      persistUiPreferences(controller);
       controller.actions.render();
     };
 
@@ -396,18 +566,40 @@
     };
 
     controller.actions.setTab = function (tab) {
+      if (controller.state.ui.activeTab === tab) {
+        return;
+      }
       controller.state.ui.activeTab = tab;
-      controller.actions.render();
+      shell.setActiveTab(controller.refs, controller.state.ui.activeTab);
     };
 
     controller.actions.setPaletteFilter = function (value) {
-      controller.state.ui.paletteFilter = String(value || "").trim().toLowerCase();
-      controller.actions.render();
+      var nextFilter = String(value || "").trim().toLowerCase();
+      if (controller.state.ui.paletteFilter === nextFilter) {
+        return;
+      }
+      controller.state.ui.paletteFilter = nextFilter;
+      sidebar.renderPalette(controller);
+    };
+
+    controller.actions.togglePaletteGroup = function (groupName) {
+      if (!groupName) {
+        return;
+      }
+
+      if (controller.state.ui.paletteCollapsed[groupName]) {
+        delete controller.state.ui.paletteCollapsed[groupName];
+      } else {
+        controller.state.ui.paletteCollapsed[groupName] = true;
+      }
+
+      persistUiPreferences(controller);
+      sidebar.renderPalette(controller);
     };
 
     controller.actions.beginInlineEdit = function (componentId, fieldPath, multiline) {
       var page = projectData.getActivePage(controller.state.project);
-      var context = projectData.findComponentContext(page, componentId);
+      var context = projectData.findComponentContext(page, componentId, projectData.buildContextIndex(page));
       if (!context) {
         return;
       }
@@ -420,7 +612,7 @@
         multiline: !!multiline,
         value: fieldPath === "__table__" ? null : utils.getByPath(context.node, fieldPath)
       };
-      controller.actions.render();
+      renderSelectionViews(controller);
     };
 
     controller.actions.updateInlineEditValue = function (value) {
@@ -459,13 +651,16 @@
         return;
       }
       controller.state.ui.inlineEdit = null;
-      controller.actions.render();
+      renderSelectionViews(controller);
     };
   }
 
   function commitProjectChange(controller, changeFn, successLabel, silent) {
     try {
-      changeFn(controller.state.project);
+      var changed = changeFn(controller.state.project);
+      if (changed === false) {
+        return;
+      }
       projectData.touchProject(controller.state.project);
       controller.state.history = historyManager.push(controller.state.history, controller.state.project);
       controller.state.ui.saveStatus = "saved";
@@ -492,8 +687,44 @@
       return controller.state.selection.ids.length ? controller.state.selection.ids.length + " items" : "None";
     }
     var page = projectData.getActivePage(controller.state.project);
-    var context = projectData.findComponentContext(page, controller.state.selection.ids[0]);
+    var context = projectData.findComponentContext(page, controller.state.selection.ids[0], projectData.buildContextIndex(page));
     return context ? context.node.name : "None";
+  }
+
+  function getSelectedRootComponents(page, selectedIds) {
+    var selectedMap = Object.create(null);
+    (selectedIds || []).forEach(function (id) {
+      selectedMap[id] = true;
+    });
+
+    return (page.root.children || []).filter(function (component) {
+      return !!selectedMap[component.id] && component.frame;
+    }).map(function (component) {
+      return { component: component, frame: component.frame };
+    });
+  }
+
+  function selectionBounds(selected) {
+    var left = selected[0].frame.x;
+    var top = selected[0].frame.y;
+    var right = selected[0].frame.x + selected[0].frame.width;
+    var bottom = selected[0].frame.y + selected[0].frame.height;
+
+    selected.slice(1).forEach(function (entry) {
+      left = Math.min(left, entry.frame.x);
+      top = Math.min(top, entry.frame.y);
+      right = Math.max(right, entry.frame.x + entry.frame.width);
+      bottom = Math.max(bottom, entry.frame.y + entry.frame.height);
+    });
+
+    return {
+      left: left,
+      top: top,
+      right: right,
+      bottom: bottom,
+      centerX: Math.round((left + right) / 2),
+      centerY: Math.round((top + bottom) / 2)
+    };
   }
 
   function reconcileSelection(controller) {
@@ -501,8 +732,25 @@
       return;
     }
     var page = projectData.getActivePage(controller.state.project);
+    var contextIndex = projectData.buildContextIndex(page);
     controller.state.selection.ids = controller.state.selection.ids.filter(function (id) {
-      return !!projectData.findComponentContext(page, id);
+      return !!projectData.findComponentContext(page, id, contextIndex);
+    });
+  }
+
+  function renderSelectionViews(controller) {
+    var activePage = projectData.getActivePage(controller.state.project);
+    sidebar.renderLayers(controller);
+    canvas.renderCanvas(controller);
+    inspector.renderInspector(controller);
+    shell.updateStatus(controller.refs, controller.state, countComponents(activePage.root), selectionLabel(controller));
+  }
+
+  function persistUiPreferences(controller) {
+    persistence.savePreferences({
+      zoom: controller.state.ui.zoom,
+      panelWidths: controller.state.ui.panelWidths,
+      paletteCollapsed: controller.state.ui.paletteCollapsed
     });
   }
 

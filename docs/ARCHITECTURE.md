@@ -99,15 +99,21 @@ The current implementation uses controller-owned actions bound directly from DOM
 
 1. User event in toolbar, palette, tree, canvas, or inspector
 2. Controller action mutates project or UI state
-3. Project is touched and autosaved when needed
+3. Project is touched and autosaved when needed (debounced)
 4. History snapshot is updated for persistent changes
-5. Full UI render refreshes sidebar, canvas, inspector, and status surfaces
+5. Full UI render refreshes sidebar, canvas, inspector, and status surfaces for structural changes
+
+Performance-oriented details:
+
+- Sidebar and layer interactions are handled with delegated listeners on stable container roots to avoid per-item rebinding.
+- Selection-only and inline-edit state changes use scoped rerenders (layers + canvas + inspector + status) instead of a full shell rerender.
+- Component lookup-heavy mutations can use an active-page context index for faster repeated id resolution during one action.
 
 This is intentionally explicit and easy to trace while the app is still growing.
 
 ## Persistence architecture
 
-- Autosave: localStorage
+- Autosave: localStorage (debounced writes with flush on unload)
 - Preferences: localStorage
 - Recent projects metadata: localStorage
 - Manual save: File System Access API when available, otherwise download fallback

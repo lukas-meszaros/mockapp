@@ -9,7 +9,7 @@ Bootstrap version reference: 5.3.8
 - Layout: Container, Row, Column
 - Typography: Heading, Paragraph
 - Buttons: Button
-- Forms: Text Input, Textarea, Select, Checkbox
+- Forms: Text Input, Textarea, Select, Checkbox, Radio, Switch
 - Navigation: Navbar
 - Content: Card, Badge, Table
 - Feedback: Alert
@@ -17,8 +17,10 @@ Bootstrap version reference: 5.3.8
 
 ### Supported as composite
 
-- Login Form
-- Dashboard Grid
+- Most additional palette entries are currently implemented as template/composite aliases built from stable primitives
+- Input variants (email/password/number/search/tel/url) map to configured `form.input`
+- Responsive Table maps to `data.table`
+- Many interactive Bootstrap entries are represented as editable visual composites in MVP
 
 ### Represented visually later
 
@@ -37,21 +39,10 @@ Bootstrap version reference: 5.3.8
 
 ### Planned later
 
-- Breadcrumb
-- Pagination
-- List Group
-- Button Group / Toolbar
-- Floating Labels
-- Input Group
-- Validation states
-- Placeholder
-- Close button
-- Figure
-- Image helpers
-- Multi-select
-- Switch
-- Range
-- File input
+- Native per-component renderers for palette aliases that are currently represented via composites
+- True semantic implementations for radio/switch/range/file/floating-label/input-group
+- Dedicated renderers for nav tabs/pills/breadcrumb/pagination/dropdown/offcanvas
+- Dedicated renderers for list-group/image/figure/progress/spinner/toast/placeholder
 
 ## Implemented component details
 
@@ -120,25 +111,25 @@ Bootstrap version reference: 5.3.8
 - Accordion: planned later
 - Alerts: supported
 - Badges: supported
-- Breadcrumb: planned later
+- Breadcrumb: represented visually later (palette entry available)
 - Buttons: supported
-- Button group: planned later
+- Button group: represented visually later (palette entry available)
 - Card: supported
-- Carousel: planned later
-- Close button: planned later
-- Collapse: planned later
-- Dropdowns: planned later
-- List group: planned later
+- Carousel: represented visually later (palette entry available)
+- Close button: represented visually later (palette entry available)
+- Collapse: represented visually later (palette entry available)
+- Dropdowns: represented visually later (palette entry available)
+- List group: represented visually later (palette entry available)
 - Modal: represented visually later
 - Navbar: supported
-- Navs and tabs: planned later
+- Navs and tabs: represented visually later (palette entries available)
 - Offcanvas: represented visually later
-- Pagination: planned later
-- Placeholders: planned later
+- Pagination: represented visually later (palette entry available)
+- Placeholders: represented visually later (palette entry available)
 - Popovers: represented visually later
-- Progress: planned later
+- Progress: represented visually later (palette entry available)
 - Scrollspy: not applicable in editor MVP
-- Spinners: planned later
+- Spinners: represented visually later (palette entry available)
 - Toasts: represented visually later
 - Tooltips: represented visually later
 
@@ -147,12 +138,12 @@ Bootstrap version reference: 5.3.8
 - Textarea: supported
 - Select: supported
 - Checkbox: supported
-- Radios: planned later
-- Switches: planned later
-- Range: planned later
-- Floating labels: planned later
-- Input groups: planned later
-- Validation: planned later
+- Radios: supported
+- Switches: supported
+- Range: represented visually later (palette entry available)
+- Floating labels: represented visually later (palette entry available)
+- Input groups: represented visually later (palette entry available)
+- Validation: represented visually later (palette entry available)
 
 ## Upgrade procedure
 

@@ -235,6 +235,25 @@ textarea:focus-visible,
   overflow: hidden;
 }
 
+.preview-exit-button {
+  display: none;
+  position: fixed;
+  right: 18px;
+  top: 14px;
+  z-index: 1200;
+  padding: 8px 12px;
+  border: 1px solid rgba(214, 53, 69, 0.42);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #b42318;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+  font-weight: 600;
+}
+
+.preview-exit-button i {
+  margin-right: 6px;
+}
+
 .panel,
 .canvas-panel {
   min-height: 0;
@@ -296,19 +315,42 @@ textarea:focus-visible,
   border: 0;
 }
 
-body.preview-mode .panel,
 body.preview-mode .topbar,
 body.preview-mode .status-bar,
 body.preview-mode .splitter {
   display: none;
 }
 
+body.preview-mode .canvas-topbar,
+body.preview-mode .canvas-subbar,
+body.preview-mode .viewport-ruler {
+  display: none;
+}
+
+body.preview-mode .preview-exit-button {
+  display: inline-flex;
+  align-items: center;
+}
+
 body.preview-mode .workspace {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(260px, 320px) 1fr;
+}
+
+body.preview-mode .panel-right {
+  display: none;
+}
+
+body.preview-mode .panel-left {
+  display: flex;
 }
 
 body.preview-mode .canvas-panel {
-  grid-column: 1;
+  grid-column: 2;
+}
+
+body.preview-mode .canvas-stage {
+  padding: 0;
+  background: #f0f4fa;
 }
 
 @media (max-width: 1200px) {

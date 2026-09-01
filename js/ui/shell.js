@@ -73,7 +73,12 @@
 
   function showDialog(refs, options) {
     refs.dialogTitle.textContent = options.title || "Notice";
-    refs.dialogBody.textContent = options.message || "";
+    refs.dialogBody.innerHTML = "";
+    if (typeof options.renderBody === "function") {
+      options.renderBody(refs.dialogBody);
+    } else {
+      refs.dialogBody.textContent = options.message || "";
+    }
     refs.dialogConfirm.textContent = options.confirmLabel || "OK";
     refs.dialogCancel.hidden = !options.onCancel;
 
@@ -83,11 +88,15 @@
     }
 
     refs.dialogConfirm.onclick = function () {
+      var shouldClose = true;
+      if (options.onConfirm) {
+        shouldClose = options.onConfirm(refs.dialogBody) !== false;
+      }
+      if (!shouldClose) {
+        return;
+      }
       cleanup();
       refs.dialog.close();
-      if (options.onConfirm) {
-        options.onConfirm();
-      }
     };
 
     refs.dialogCancel.onclick = function () {

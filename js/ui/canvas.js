@@ -7,13 +7,34 @@
   var MIN_FRAME_WIDTH = 80;
   var MIN_FRAME_HEIGHT = 48;
 
+  function usesContentSelectionChrome(component) {
+    switch (component.type) {
+      case "form.input":
+      case "form.textarea":
+      case "form.select":
+      case "form.checkbox":
+      case "form.radio":
+      case "form.switch":
+        return true;
+      default:
+        return false;
+    }
+  }
+
   function renderCanvas(controller) {
     var refs = controller.refs;
     var page = projectData.getActivePage(controller.state.project);
     refs.pageTitle.textContent = page.name;
     refs.canvasRoot.innerHTML = "";
     refs.canvasRoot.classList.remove("is-dragover");
+
+    if (controller.state.ui.preview) {
+      renderLivePreview(controller, page);
+      return;
+    }
+
     bindRootDropSurface(controller, page);
+    bindMarqueeSelection(controller, page);
 
     if (!page.root.children.length) {
       refs.canvasRoot.appendChild(renderEmptyState(controller));
@@ -21,10 +42,40 @@
       return;
     }
 
-    page.root.children.forEach(function (component) {
-      refs.canvasRoot.appendChild(renderNode(controller, component, page.root));
+    page.root.children.forEach(function (component, rootLayerIndex) {
+      refs.canvasRoot.appendChild(renderNode(controller, component, page.root, rootLayerIndex));
     });
     refs.canvasRoot.appendChild(createRootDropHint("Freeform canvas mode. Drag root items to reposition them."));
+  }
+
+  function renderLivePreview(controller, page) {
+    var preview = document.createElement("div");
+    preview.className = "canvas-live-preview";
+    preview.innerHTML = (page.root.children || []).map(function (component, rootLayerIndex) {
+      var html = exporters.renderComponentHtml(component, true, {
+        isRootChild: false,
+        hideLabels: false,
+        preserveLineBreaks: true,
+        inlineEditing: false
+      });
+      return '<div class="canvas-live-item" data-component-id="' + component.id + '" style="' + liveFrameStyle(component.frame, rootLayerIndex) + '">' + html + '</div>';
+    }).join("\n");
+
+    controller.refs.canvasRoot.appendChild(preview);
+  }
+
+  function liveFrameStyle(frame, rootLayerIndex) {
+    if (!frame) {
+      return "";
+    }
+
+    return [
+      "left:" + frame.x + "px",
+      "top:" + frame.y + "px",
+      "width:" + frame.width + "px",
+      "min-height:" + frame.height + "px",
+      "z-index:" + String((rootLayerIndex || 0) + 1)
+    ].join(";");
   }
 
   function renderEmptyState(controller) {
@@ -34,20 +85,25 @@
     return empty;
   }
 
-  function renderNode(controller, component, parentNode) {
+  function renderNode(controller, component, parentNode, rootLayerIndex) {
     var wrapper = document.createElement("div");
     var isSelected = controller.state.selection.ids.indexOf(component.id) >= 0;
     var inlineEditTarget = getPrimaryInlineEditTarget(component);
     wrapper.className = "canvas-node" + (isSelected ? " is-selected" : "");
+    wrapper.dataset.componentId = component.id;
     var isRootChild = parentNode && parentNode.type === "page-root";
     if (isRootChild && component.frame) {
       wrapper.style.left = component.frame.x + "px";
       wrapper.style.top = component.frame.y + "px";
       wrapper.style.width = component.frame.width + "px";
       wrapper.style.height = component.frame.height + "px";
+      wrapper.style.zIndex = String((rootLayerIndex || 0) + 1);
     }
     var frame = document.createElement("div");
     frame.className = "node-frame" + (isSelected ? " is-selected" : "");
+    if (usesContentSelectionChrome(component)) {
+      frame.classList.add("selection-follows-control");
+    }
     if (isRootChild) {
       frame.classList.add("is-freeform");
     }
@@ -63,7 +119,11 @@
     }
     preview.addEventListener("click", function (event) {
       event.stopPropagation();
-      controller.actions.selectOnly(component.id);
+      if (event.metaKey || event.ctrlKey || event.shiftKey) {
+        controller.actions.toggleSelection(component.id);
+      } else {
+        controller.actions.selectOnly(component.id);
+      }
     });
     preview.addEventListener("dblclick", function (event) {
       var target = event.target.closest("[data-inline-edit-field]");
@@ -94,7 +154,7 @@
       children.className = "node-children";
       children.appendChild(createDropZone(controller, component.id, "Drop into " + component.name));
       component.children.forEach(function (child) {
-        children.appendChild(renderNode(controller, child, component));
+        children.appendChild(renderNode(controller, child, component, null));
       });
       frame.appendChild(children);
     } else if (registry.getDefinition(component.type).allowsChildren) {
@@ -111,11 +171,15 @@
         event.dataTransfer.effectAllowed = "move";
       });
     } else {
-      enableFreeformDrag(controller, wrapper, frame, component);
+      enableFreeformDrag(controller, wrapper, frame, preview, component);
       attachResizeHandles(controller, wrapper, frame, preview, component);
     }
-    frame.addEventListener("click", function () {
-      controller.actions.selectOnly(component.id);
+    frame.addEventListener("click", function (event) {
+      if (event.metaKey || event.ctrlKey || event.shiftKey) {
+        controller.actions.toggleSelection(component.id);
+      } else {
+        controller.actions.selectOnly(component.id);
+      }
     });
 
     wrapper.appendChild(frame);
@@ -177,10 +241,86 @@
     });
 
     root.addEventListener("click", function (event) {
+      if (root.dataset.skipClearClick === "true") {
+        root.dataset.skipClearClick = "false";
+        return;
+      }
       if (event.target === root) {
         controller.actions.selectOnly(null);
       }
     });
+  }
+
+  function bindMarqueeSelection(controller, page) {
+    var root = controller.refs.canvasRoot;
+    if (root.dataset.marqueeBound === "true") {
+      return;
+    }
+
+    root.dataset.marqueeBound = "true";
+    root.addEventListener("pointerdown", function (event) {
+      if (controller.state.ui.preview || event.button !== 0 || event.target !== root) {
+        return;
+      }
+
+      var startPoint = toCanvasPoint(controller, event.clientX, event.clientY);
+      var box = document.createElement("div");
+      box.className = "selection-marquee";
+      root.appendChild(box);
+
+      function updateBox(point) {
+        var x = Math.min(startPoint.x, point.x);
+        var y = Math.min(startPoint.y, point.y);
+        var width = Math.abs(point.x - startPoint.x);
+        var height = Math.abs(point.y - startPoint.y);
+        box.style.left = x + "px";
+        box.style.top = y + "px";
+        box.style.width = width + "px";
+        box.style.height = height + "px";
+      }
+
+      function onMove(moveEvent) {
+        updateBox(toCanvasPoint(controller, moveEvent.clientX, moveEvent.clientY));
+      }
+
+      function onUp(upEvent) {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        var endPoint = toCanvasPoint(controller, upEvent.clientX, upEvent.clientY);
+        var rect = {
+          left: Math.min(startPoint.x, endPoint.x),
+          top: Math.min(startPoint.y, endPoint.y),
+          right: Math.max(startPoint.x, endPoint.x),
+          bottom: Math.max(startPoint.y, endPoint.y)
+        };
+
+        var selectedIds = (page.root.children || []).filter(function (component) {
+          return component.frame && intersects(component.frame, rect);
+        }).map(function (component) {
+          return component.id;
+        });
+
+        box.remove();
+        root.dataset.skipClearClick = "true";
+        if (selectedIds.length) {
+          controller.actions.setSelection(selectedIds, upEvent.metaKey || upEvent.ctrlKey || upEvent.shiftKey);
+        } else if (!(upEvent.metaKey || upEvent.ctrlKey || upEvent.shiftKey)) {
+          controller.actions.selectOnly(null);
+        }
+      }
+
+      updateBox(startPoint);
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    });
+  }
+
+  function intersects(frame, rect) {
+    var left = frame.x;
+    var top = frame.y;
+    var right = frame.x + frame.width;
+    var bottom = frame.y + frame.height;
+    return !(right < rect.left || left > rect.right || bottom < rect.top || top > rect.bottom);
   }
 
   function createRootDropHint(text) {
@@ -215,6 +355,8 @@
       case "form.select":
         return inlineEditTarget(fieldPath || "props.label", false);
       case "form.checkbox":
+      case "form.radio":
+      case "form.switch":
         return inlineEditTarget(fieldPath || "props.label", false);
       case "feedback.alert":
         return inlineEditTarget("props.text", true);
@@ -376,122 +518,6 @@
     return cell;
   }
 
-  function createDropZone(controller, parentId, labelText) {
-    var zone = document.createElement("div");
-    zone.className = "drop-zone";
-    zone.textContent = labelText;
-    zone.addEventListener("dragover", function (event) {
-      event.preventDefault();
-      zone.classList.add("is-active");
-    });
-    zone.addEventListener("dragleave", function () {
-      zone.classList.remove("is-active");
-    });
-    zone.addEventListener("drop", function (event) {
-      event.preventDefault();
-      zone.classList.remove("is-active");
-      var paletteType = event.dataTransfer.getData("application/mockapp-palette");
-      var componentId = event.dataTransfer.getData("application/mockapp-component");
-      if (paletteType) {
-        controller.actions.addComponent(paletteType, parentId);
-      } else if (componentId) {
-        controller.actions.moveComponent(componentId, parentId);
-      }
-    });
-    return zone;
-  }
-
-  function bindRootDropSurface(controller, page) {
-    var root = controller.refs.canvasRoot;
-    if (root.dataset.dropBound === "true") {
-      return;
-    }
-
-    root.dataset.dropBound = "true";
-    root.addEventListener("dragover", function (event) {
-      event.preventDefault();
-      root.classList.add("is-dragover");
-    });
-    root.addEventListener("dragleave", function (event) {
-      if (event.target === root) {
-        root.classList.remove("is-dragover");
-      }
-    });
-    root.addEventListener("drop", function (event) {
-      event.preventDefault();
-      root.classList.remove("is-dragover");
-      var point = toCanvasPoint(controller, event.clientX, event.clientY);
-      var paletteType = event.dataTransfer.getData("application/mockapp-palette");
-      var componentId = event.dataTransfer.getData("application/mockapp-component");
-      if (paletteType) {
-        controller.actions.addComponentAt(paletteType, point);
-      } else if (componentId) {
-        controller.actions.moveComponent(componentId, null, point);
-      }
-    });
-
-    root.addEventListener("click", function (event) {
-      if (event.target === root) {
-        controller.actions.selectOnly(null);
-      }
-    });
-  }
-
-  function createRootDropHint(text) {
-    var hint = document.createElement("div");
-    hint.className = "root-drop-hint";
-    hint.textContent = text;
-    return hint;
-  }
-
-  function previewComponent(component) {
-    var copy = utils.deepClone(component);
-    copy.children = [];
-    return copy;
-  }
-
-  function getPrimaryInlineEditTarget(component) {
-    return getInlineEditTarget(component, null);
-  }
-
-  function getInlineEditTarget(component, fieldPath) {
-    switch (component.type) {
-      case "content.heading":
-        return inlineEditTarget("props.text", false);
-      case "content.paragraph":
-        return inlineEditTarget("props.text", true);
-      case "action.button":
-        return inlineEditTarget("props.text", false);
-      case "form.input":
-        return inlineEditTarget(fieldPath || "props.label", false);
-      case "form.textarea":
-        return inlineEditTarget(fieldPath || "props.label", false);
-      case "form.select":
-        return inlineEditTarget(fieldPath || "props.label", false);
-      case "form.checkbox":
-        return inlineEditTarget(fieldPath || "props.label", false);
-      case "feedback.alert":
-        return inlineEditTarget("props.text", true);
-      case "content.badge":
-        return inlineEditTarget("props.text", false);
-      case "data.table":
-        return inlineEditTarget("__table__", true, "table");
-      case "content.card":
-        if (fieldPath === "props.text") {
-          return inlineEditTarget("props.text", true);
-        }
-        return inlineEditTarget(fieldPath === "props.title" ? "props.title" : "props.title", false);
-      case "nav.navbar":
-        return inlineEditTarget("props.brand", false);
-      default:
-        return null;
-    }
-  }
-
-  function inlineEditTarget(fieldPath, multiline, kind) {
-    return { fieldPath: fieldPath, multiline: !!multiline, kind: kind || "field" };
-  }
-
   function parseTableModel(component) {
     var columns = splitCsvLine(utils.getByPath(component, "props.columnsText") || "");
     var rows = splitTableRows(utils.getByPath(component, "props.rowsText") || "");
@@ -536,7 +562,7 @@
     });
   }
 
-  function enableFreeformDrag(controller, wrapper, frame, component) {
+  function enableFreeformDrag(controller, wrapper, frame, preview, component) {
     if (component.meta.locked) {
       return;
     }
@@ -558,6 +584,9 @@
       var startPoint = toCanvasPoint(controller, event.clientX, event.clientY);
       var startFrame = utils.deepClone(component.frame);
       var guides = createGuides(controller.refs.canvasRoot);
+      var frameScheduler = createFrameScheduler(function (nextFrame) {
+        applyLiveFrame(wrapper, preview, nextFrame);
+      });
 
       function onMove(moveEvent) {
         var point = toCanvasPoint(controller, moveEvent.clientX, moveEvent.clientY);
@@ -567,16 +596,14 @@
           width: startFrame.width,
           height: startFrame.height
         };
-        nextFrame = applyCanvasSnap(controller, component.id, nextFrame, guides);
-        wrapper.style.left = nextFrame.x + "px";
-        wrapper.style.top = nextFrame.y + "px";
-        wrapper.style.width = nextFrame.width + "px";
-        wrapper.style.height = nextFrame.height + "px";
+        nextFrame = applyCanvasSnap(controller, component.id, nextFrame, guides, moveEvent.altKey);
+        frameScheduler.schedule(nextFrame);
       }
 
       function onUp(upEvent) {
         frame.classList.remove("is-dragging");
         destroyGuides(guides);
+        frameScheduler.flush();
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
         var point = toCanvasPoint(controller, upEvent.clientX, upEvent.clientY);
@@ -586,7 +613,7 @@
           width: startFrame.width,
           height: startFrame.height
         };
-        endFrame = applyCanvasSnap(controller, component.id, endFrame);
+        endFrame = applyCanvasSnap(controller, component.id, endFrame, null, upEvent.altKey);
         controller.actions.setComponentFrame(component.id, endFrame);
       }
 
@@ -613,23 +640,27 @@
 
         var startPoint = toCanvasPoint(controller, event.clientX, event.clientY);
         var startFrame = utils.deepClone(component.frame);
+        var frameScheduler = createFrameScheduler(function (nextFrame) {
+          applyLiveFrame(wrapper, preview, nextFrame);
+        });
 
         function onMove(moveEvent) {
           var point = toCanvasPoint(controller, moveEvent.clientX, moveEvent.clientY);
           var nextFrame = resizeFromDirection(startFrame, direction, point.x - startPoint.x, point.y - startPoint.y);
-          nextFrame = snapFrameToGrid(controller, nextFrame);
-          nextFrame = snapFrameToNearbyEdges(controller, component.id, nextFrame, direction);
-          applyLiveFrame(wrapper, preview, nextFrame);
+          nextFrame = snapFrameToGrid(controller, nextFrame, moveEvent.altKey);
+          nextFrame = snapFrameToNearbyEdges(controller, component.id, nextFrame, direction, moveEvent.altKey);
+          frameScheduler.schedule(nextFrame);
         }
 
         function onUp(upEvent) {
           frame.classList.remove("is-resizing");
+          frameScheduler.flush();
           window.removeEventListener("pointermove", onMove);
           window.removeEventListener("pointerup", onUp);
           var point = toCanvasPoint(controller, upEvent.clientX, upEvent.clientY);
           var nextFrame = resizeFromDirection(startFrame, direction, point.x - startPoint.x, point.y - startPoint.y);
-          nextFrame = snapFrameToGrid(controller, nextFrame);
-          nextFrame = snapFrameToNearbyEdges(controller, component.id, nextFrame, direction);
+          nextFrame = snapFrameToGrid(controller, nextFrame, upEvent.altKey);
+          nextFrame = snapFrameToNearbyEdges(controller, component.id, nextFrame, direction, upEvent.altKey);
           controller.actions.setComponentFrame(component.id, nextFrame);
         }
 
@@ -670,14 +701,14 @@
     return nextFrame;
   }
 
-  function snapFrameToGrid(controller, frame) {
+  function snapFrameToGrid(controller, frame, disableSnap) {
     var nextFrame = {
       x: frame.x,
       y: frame.y,
       width: frame.width,
       height: frame.height
     };
-    if (!controller.state.project.settings.grid.snap) {
+    if (!controller.state.project.settings.grid.snap || disableSnap) {
       return nextFrame;
     }
     var grid = controller.state.project.settings.grid.size;
@@ -688,7 +719,7 @@
     return nextFrame;
   }
 
-  function snapFrameToNearbyEdges(controller, componentId, frame, direction) {
+  function snapFrameToNearbyEdges(controller, componentId, frame, direction, disableSnap) {
     var page = projectData.getActivePage(controller.state.project);
     var snapped = {
       x: frame.x,
@@ -696,6 +727,10 @@
       width: frame.width,
       height: frame.height
     };
+    if (disableSnap) {
+      return snapped;
+    }
+
     var siblings = (page.root.children || []).filter(function (entry) {
       return entry.id !== componentId && entry.frame;
     });
@@ -767,7 +802,7 @@
     };
   }
 
-  function applyCanvasSnap(controller, componentId, frame, guides) {
+  function applyCanvasSnap(controller, componentId, frame, guides, disableSnap) {
     var page = projectData.getActivePage(controller.state.project);
     var snapped = {
       x: frame.x,
@@ -780,7 +815,7 @@
     var siblings = (page.root.children || []).filter(function (entry) {
       return entry.id !== componentId && entry.frame;
     });
-    var snapEnabled = controller.state.project.settings.grid.snap;
+    var snapEnabled = controller.state.project.settings.grid.snap && !disableSnap;
     var grid = controller.state.project.settings.grid.size;
 
     if (snapEnabled) {
@@ -788,25 +823,27 @@
       snapped.y = Math.round(snapped.y / grid) * grid;
     }
 
-    siblings.forEach(function (sibling) {
-      [sibling.frame.x, sibling.frame.x + sibling.frame.width / 2, sibling.frame.x + sibling.frame.width].forEach(function (targetX) {
-        [snapped.x, snapped.x + snapped.width / 2, snapped.x + snapped.width].forEach(function (sourceX, index) {
-          var deltaX = Math.abs(targetX - sourceX);
-          if (deltaX <= SNAP_THRESHOLD && (!bestVertical || deltaX < bestVertical.delta)) {
-            bestVertical = { delta: deltaX, target: targetX, sourceIndex: index, sibling: sibling };
-          }
+    if (!disableSnap) {
+      siblings.forEach(function (sibling) {
+        [sibling.frame.x, sibling.frame.x + sibling.frame.width / 2, sibling.frame.x + sibling.frame.width].forEach(function (targetX) {
+          [snapped.x, snapped.x + snapped.width / 2, snapped.x + snapped.width].forEach(function (sourceX, index) {
+            var deltaX = Math.abs(targetX - sourceX);
+            if (deltaX <= SNAP_THRESHOLD && (!bestVertical || deltaX < bestVertical.delta)) {
+              bestVertical = { delta: deltaX, target: targetX, sourceIndex: index, sibling: sibling };
+            }
+          });
         });
-      });
 
-      [sibling.frame.y, sibling.frame.y + sibling.frame.height / 2, sibling.frame.y + sibling.frame.height].forEach(function (targetY) {
-        [snapped.y, snapped.y + snapped.height / 2, snapped.y + snapped.height].forEach(function (sourceY, index) {
-          var deltaY = Math.abs(targetY - sourceY);
-          if (deltaY <= SNAP_THRESHOLD && (!bestHorizontal || deltaY < bestHorizontal.delta)) {
-            bestHorizontal = { delta: deltaY, target: targetY, sourceIndex: index, sibling: sibling };
-          }
+        [sibling.frame.y, sibling.frame.y + sibling.frame.height / 2, sibling.frame.y + sibling.frame.height].forEach(function (targetY) {
+          [snapped.y, snapped.y + snapped.height / 2, snapped.y + snapped.height].forEach(function (sourceY, index) {
+            var deltaY = Math.abs(targetY - sourceY);
+            if (deltaY <= SNAP_THRESHOLD && (!bestHorizontal || deltaY < bestHorizontal.delta)) {
+              bestHorizontal = { delta: deltaY, target: targetY, sourceIndex: index, sibling: sibling };
+            }
+          });
         });
       });
-    });
+    }
 
     if (bestVertical) {
       if (bestVertical.sourceIndex === 0) {
@@ -873,6 +910,40 @@
     }
     guides.vertical.remove();
     guides.horizontal.remove();
+  }
+
+  function createFrameScheduler(onApply) {
+    var rafId = 0;
+    var pending = null;
+
+    function apply() {
+      rafId = 0;
+      if (!pending) {
+        return;
+      }
+      onApply(pending);
+      pending = null;
+    }
+
+    return {
+      schedule: function (frame) {
+        pending = frame;
+        if (rafId) {
+          return;
+        }
+        rafId = window.requestAnimationFrame(apply);
+      },
+      flush: function () {
+        if (rafId) {
+          window.cancelAnimationFrame(rafId);
+          rafId = 0;
+        }
+        if (pending) {
+          onApply(pending);
+          pending = null;
+        }
+      }
+    };
   }
 
   MockApp.ui.canvas = {

@@ -112,6 +112,40 @@
   color: var(--mockapp-muted);
 }
 
+.palette-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.palette-group-header .palette-group-title {
+  margin: 0;
+}
+
+.palette-group-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--mockapp-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--mockapp-muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.palette-group-toggle:hover {
+  border-color: rgba(20, 99, 255, 0.34);
+  color: #0d4dd7;
+}
+
+.palette-group.is-collapsed .palette-grid {
+  display: none;
+}
+
 .palette-grid {
   display: grid;
   gap: 6px;
@@ -218,6 +252,39 @@
 .property-field {
   display: grid;
   gap: 4px;
+}
+
+.list-editor {
+  display: grid;
+  gap: 6px;
+}
+
+.list-editor-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.list-editor-input {
+  flex: 1;
+}
+
+.list-editor-remove {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.list-editor-toolbar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.list-editor-help {
+  font-size: 0.78rem;
+  color: var(--mockapp-muted);
 }
 
 .property-field label {

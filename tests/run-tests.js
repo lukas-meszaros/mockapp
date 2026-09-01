@@ -50,20 +50,26 @@ const container = projectApi.createComponent('layout.container');
 const row = projectApi.createComponent('layout.row');
 const column = projectApi.createComponent('layout.column');
 const button = projectApi.createComponent('action.button');
+const radio = projectApi.createComponent('form.radio');
+const appSwitch = projectApi.createComponent('form.switch');
 
 projectApi.insertComponent(page, null, container);
 projectApi.insertComponent(page, container.id, row);
 projectApi.insertComponent(page, row.id, column);
 projectApi.insertComponent(page, column.id, button);
+projectApi.insertComponent(page, column.id, radio);
+projectApi.insertComponent(page, column.id, appSwitch);
 
 assert.equal(typeof container.frame.x, 'number');
 assert.equal(typeof container.frame.width, 'number');
+assert.equal(radio.type, 'form.radio');
+assert.equal(appSwitch.type, 'form.switch');
 
 let componentCount = 0;
 projectApi.walkComponents(page.root, () => {
   componentCount += 1;
 });
-assert.equal(componentCount, 4);
+assert.equal(componentCount, 6);
 
 assert.equal(registryApi.canAcceptChild('layout.row', 'layout.column'), true);
 assert.equal(registryApi.canAcceptChild('layout.row', 'action.button'), false);

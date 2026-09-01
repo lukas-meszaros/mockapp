@@ -16,6 +16,58 @@ dialog.mockapp-dialog::backdrop {
   padding: 16px 18px;
 }
 
+.dialog-body {
+  display: grid;
+  gap: 12px;
+}
+
+.designer-help {
+  font-size: 0.85rem;
+  color: var(--mockapp-muted);
+  background: var(--mockapp-panel-muted);
+  border: 1px solid var(--mockapp-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.designer-field,
+.designer-list {
+  display: grid;
+  gap: 8px;
+}
+
+.designer-field label,
+.designer-list-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mockapp-muted);
+}
+
+.designer-list-rows {
+  display: grid;
+  gap: 6px;
+}
+
+.designer-list-row {
+  display: flex;
+  gap: 8px;
+}
+
+.designer-list-row .inspector-input {
+  flex: 1;
+}
+
+.designer-list-remove {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .dialog-header {
   border-bottom: 1px solid var(--mockapp-border);
 }

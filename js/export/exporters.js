@@ -126,6 +126,16 @@
           return '<div class="form-check"' + rootStyle + inlineEditAttrs(renderOptions, "props.label", false) + '><input class="form-check-input" type="checkbox"' + (props.checked ? ' checked="checked"' : '') + ' /><label class="form-check-label">' + utils.escapeHtml(props.label || "") + '</label></div>';
         }
         return '<div class="form-check"' + rootStyle + '><input class="form-check-input" type="checkbox"' + (props.checked ? ' checked="checked"' : '') + ' /><label class="form-check-label">' + utils.escapeHtml(props.label || "") + '</label></div>';
+      case "form.radio":
+        if (renderOptions.hideLabels) {
+          return '<div class="form-check"' + rootStyle + inlineEditAttrs(renderOptions, "props.label", false) + '><input class="form-check-input" type="radio" name="' + utils.escapeHtml(props.groupName || component.id) + '"' + (props.checked ? ' checked="checked"' : '') + ' /><label class="form-check-label">' + utils.escapeHtml(props.label || "") + '</label></div>';
+        }
+        return '<div class="form-check"' + rootStyle + '><input class="form-check-input" type="radio" name="' + utils.escapeHtml(props.groupName || component.id) + '"' + (props.checked ? ' checked="checked"' : '') + ' /><label class="form-check-label">' + utils.escapeHtml(props.label || "") + '</label></div>';
+      case "form.switch":
+        if (renderOptions.hideLabels) {
+          return '<div class="form-check form-switch"' + rootStyle + inlineEditAttrs(renderOptions, "props.label", false) + '><input class="form-check-input" type="checkbox" role="switch"' + (props.checked ? ' checked="checked"' : '') + ' /><label class="form-check-label">' + utils.escapeHtml(props.label || "") + '</label></div>';
+        }
+        return '<div class="form-check form-switch"' + rootStyle + '><input class="form-check-input" type="checkbox" role="switch"' + (props.checked ? ' checked="checked"' : '') + ' /><label class="form-check-label">' + utils.escapeHtml(props.label || "") + '</label></div>';
       case "feedback.alert":
         return '<div class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", true) + textStyle(renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</div>';
       case "content.badge":
@@ -133,7 +143,7 @@
       case "content.card":
         return '<div class="' + classes + '"' + rootStyle + '><div class="card-body"><h5 class="card-title"' + inlineEditAttrs(renderOptions, "props.title", false) + textStyle(renderOptions) + '>' + textHtml(props.title || "", renderOptions) + '</h5><p class="card-text"' + inlineEditAttrs(renderOptions, "props.text", true) + textStyle(renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</p>' + childrenHtml + '</div></div>';
       case "nav.navbar":
-        return '<nav class="' + classes + '"' + rootStyle + '><div class="container-fluid"><span class="navbar-brand"' + inlineEditAttrs(renderOptions, "props.brand", false) + textStyle(renderOptions) + '>' + textHtml(props.brand || "", renderOptions) + '</span>' + childrenHtml + '</div></nav>';
+        return '<nav class="' + classes + '"' + rootStyle + '><div class="container-fluid"><span class="navbar-brand"' + inlineEditAttrs(renderOptions, "props.brand", false) + textStyle(renderOptions) + '>' + textHtml(props.brand || "", renderOptions) + '</span>' + navbarLinksHtml(props) + childrenHtml + '</div></nav>';
       case "data.table":
         return '<div class="table-responsive"' + rootStyle + '><table class="' + classes + '">' + tableHtml(props) + '</table></div>';
       default:
@@ -176,6 +186,17 @@
     return splitLines(text).map(function (line) {
       return '<option>' + utils.escapeHtml(line) + '</option>';
     }).join("");
+  }
+
+  function navbarLinksHtml(props) {
+    var links = splitLines(props.linksText || "");
+    if (!links.length) {
+      return "";
+    }
+
+    return '<ul class="navbar-nav ms-auto">' + links.map(function (link, index) {
+      return '<li class="nav-item"><span class="nav-link' + (index === 0 ? ' active' : '') + '">' + utils.escapeHtml(link) + '</span></li>';
+    }).join("") + '</ul>';
   }
 
   function tableHtml(props) {

@@ -1,4 +1,5 @@
 (function (MockApp) {
+  var shell = MockApp.ui.shell;
   var registry = MockApp.components.registry;
   var projectData = MockApp.data.project;
   var utils = MockApp.utils;
@@ -155,6 +156,19 @@
     actions.appendChild(actionButton("Delete", "trash", function () {
       controller.actions.removeSelected();
     }));
+
+    if (component.type === "data.table") {
+      actions.appendChild(actionButton("Design Table", "table", function () {
+        openTableDesignerModal(controller, component);
+      }));
+    }
+
+    if (component.type === "nav.navbar") {
+      actions.appendChild(actionButton("Design Toolbar", "sliders", function () {
+        openToolbarDesignerModal(controller, component);
+      }));
+    }
+
     section.appendChild(actions);
     return section;
   }
@@ -174,6 +188,12 @@
 
     if (field.type === "number") {
       return renderNumberField(field.label, utils.getByPath(component, field.path), field.min, field.max, function (value) {
+        controller.actions.updateComponentField(component.id, field.path, value);
+      });
+    }
+
+    if (field.type === "list") {
+      return renderListField(field, utils.getByPath(component, field.path), function (value) {
         controller.actions.updateComponentField(component.id, field.path, value);
       });
     }
@@ -203,9 +223,16 @@
     input.className = isTextarea ? "inspector-textarea" : "inspector-input";
     input.setAttribute("data-inspector-field", labelText);
     input.value = value == null ? "" : value;
-    input.addEventListener("input", function () {
+    input.addEventListener("change", function () {
       onChange(input.value);
     });
+    if (!isTextarea) {
+      input.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          onChange(input.value);
+        }
+      });
+    }
     wrapper.appendChild(input);
     return wrapper;
   }
@@ -264,10 +291,118 @@
     input.min = String(min);
     input.max = String(max);
     input.value = String(value);
-    input.addEventListener("input", function () {
+    input.addEventListener("change", function () {
       onChange(Number(input.value));
     });
     wrapper.appendChild(input);
+    return wrapper;
+  }
+
+  function splitListValue(value, separator) {
+    var raw = value == null ? "" : String(value);
+    if (separator === ",") {
+      return raw.split(",").map(function (item) {
+        return item.trim();
+      }).filter(Boolean);
+    }
+
+    return raw.split(/\r?\n/).map(function (item) {
+      return item.trim();
+    }).filter(Boolean);
+  }
+
+  function joinListValue(items, separator) {
+    var compact = (items || []).map(function (item) {
+      return String(item || "").trim();
+    }).filter(Boolean);
+
+    if (separator === ",") {
+      return compact.join(", ");
+    }
+
+    return compact.join("\n");
+  }
+
+  function renderListField(field, value, onChange) {
+    var wrapper = document.createElement("div");
+    wrapper.className = "property-field";
+    var label = document.createElement("label");
+    label.textContent = field.label;
+    wrapper.appendChild(label);
+
+    var separator = field.separator || "\n";
+    var placeholder = field.itemPlaceholder || "Value";
+    var items = splitListValue(value, separator);
+    if (!items.length) {
+      items = [""];
+    }
+
+    var editor = document.createElement("div");
+    editor.className = "list-editor";
+    var rows = document.createElement("div");
+    rows.className = "list-editor-rows";
+    editor.appendChild(rows);
+
+    var help = document.createElement("div");
+    help.className = "list-editor-help";
+    help.textContent = separator === "," ? "Items are saved as comma-separated values." : "One item per line.";
+    editor.appendChild(help);
+
+    var toolbar = document.createElement("div");
+    toolbar.className = "list-editor-toolbar";
+    var addButton = document.createElement("button");
+    addButton.type = "button";
+    addButton.className = "tool-button";
+    addButton.innerHTML = '<i class="bi bi-plus"></i>Add item';
+    toolbar.appendChild(addButton);
+    editor.appendChild(toolbar);
+
+    function commit() {
+      onChange(joinListValue(items, separator));
+    }
+
+    function renderRows() {
+      rows.innerHTML = "";
+      items.forEach(function (item, index) {
+        var row = document.createElement("div");
+        row.className = "list-editor-row";
+        var input = document.createElement("input");
+        input.type = "text";
+        input.className = "inspector-input list-editor-input";
+        input.placeholder = placeholder;
+        input.setAttribute("data-inspector-field", field.label + " " + String(index + 1));
+        input.value = item;
+        input.addEventListener("change", function () {
+          items[index] = input.value;
+          commit();
+        });
+        row.appendChild(input);
+
+        var removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.className = "tool-button list-editor-remove";
+        removeButton.setAttribute("aria-label", "Remove item");
+        removeButton.innerHTML = '<i class="bi bi-dash"></i>';
+        removeButton.addEventListener("click", function () {
+          items.splice(index, 1);
+          if (!items.length) {
+            items.push("");
+          }
+          renderRows();
+          commit();
+        });
+        row.appendChild(removeButton);
+        rows.appendChild(row);
+      });
+    }
+
+    addButton.addEventListener("click", function () {
+      items.push("");
+      renderRows();
+    });
+
+    renderRows();
+    wrapper.appendChild(editor);
     return wrapper;
   }
 
@@ -286,6 +421,181 @@
     button.innerHTML = '<i class="bi bi-' + icon + '"></i>' + labelText;
     button.addEventListener("click", onClick);
     return button;
+  }
+
+  function openTableDesignerModal(controller, component) {
+    var model = parseTableModel(component);
+    var columns = model.columns.slice();
+    var rows = model.rows.map(function (row) {
+      return row.join(", ");
+    });
+
+    shell.showDialog(controller.refs, {
+      title: "Table Designer",
+      confirmLabel: "Apply",
+      onCancel: function () {},
+      renderBody: function (body) {
+        body.appendChild(designerHelp("Define table columns and row values. Use comma-separated values inside each row."));
+        body.appendChild(createStringListEditor("Columns", "Column", columns));
+        body.appendChild(createStringListEditor("Rows", "Value 1, Value 2", rows));
+      },
+      onConfirm: function (body) {
+        var groups = body.querySelectorAll("[data-list-group]");
+        var nextColumns = readListGroupValues(groups[0]);
+        var nextRows = readListGroupValues(groups[1]);
+
+        if (!nextColumns.length) {
+          shell.showToast(controller.refs, "Table requires at least one column.", true);
+          return false;
+        }
+
+        if (!nextRows.length) {
+          nextRows = [nextColumns.map(function () {
+            return "";
+          }).join(", ")];
+        }
+
+        controller.actions.updateComponentData(component.id, function (node) {
+          node.props.columnsText = nextColumns.join(", ");
+          node.props.rowsText = nextRows.join("\n");
+        }, "Table updated");
+      }
+    });
+  }
+
+  function openToolbarDesignerModal(controller, component) {
+    var brand = String(component.props.brand || "");
+    var links = splitListValue(component.props.linksText || "", "\n");
+
+    shell.showDialog(controller.refs, {
+      title: "Toolbar Designer",
+      confirmLabel: "Apply",
+      onCancel: function () {},
+      renderBody: function (body) {
+        body.appendChild(designerHelp("Configure brand text and toolbar links for the navigation component."));
+        body.appendChild(createDesignerField("Brand", brand, "Brand name"));
+        body.appendChild(createStringListEditor("Links", "Navigation item", links));
+      },
+      onConfirm: function (body) {
+        var brandInput = body.querySelector("[data-designer-brand]");
+        var linksGroup = body.querySelector("[data-list-group]");
+        var nextLinks = readListGroupValues(linksGroup);
+
+        controller.actions.updateComponentData(component.id, function (node) {
+          node.props.brand = String((brandInput && brandInput.value) || "").trim() || "MockApp";
+          node.props.linksText = nextLinks.join("\n");
+        }, "Toolbar updated");
+      }
+    });
+  }
+
+  function parseTableModel(component) {
+    var columns = splitListValue(utils.getByPath(component, "props.columnsText") || "", ",");
+    var rows = splitListValue(utils.getByPath(component, "props.rowsText") || "", "\n");
+    if (!columns.length) {
+      columns = ["Column 1"];
+    }
+    return { columns: columns, rows: rows };
+  }
+
+  function designerHelp(text) {
+    var note = document.createElement("div");
+    note.className = "designer-help";
+    note.textContent = text;
+    return note;
+  }
+
+  function createDesignerField(labelText, value, placeholder) {
+    var wrapper = document.createElement("div");
+    wrapper.className = "designer-field";
+    var label = document.createElement("label");
+    label.textContent = labelText;
+    wrapper.appendChild(label);
+    var input = document.createElement("input");
+    input.type = "text";
+    input.className = "inspector-input";
+    input.setAttribute("data-designer-brand", "true");
+    input.placeholder = placeholder || "";
+    input.value = value == null ? "" : String(value);
+    wrapper.appendChild(input);
+    return wrapper;
+  }
+
+  function createStringListEditor(labelText, itemPlaceholder, initialItems) {
+    var section = document.createElement("section");
+    section.className = "designer-list";
+    section.setAttribute("data-list-group", "true");
+
+    var heading = document.createElement("h4");
+    heading.className = "designer-list-title";
+    heading.textContent = labelText;
+    section.appendChild(heading);
+
+    var rows = document.createElement("div");
+    rows.className = "designer-list-rows";
+    section.appendChild(rows);
+
+    var addButton = document.createElement("button");
+    addButton.type = "button";
+    addButton.className = "tool-button";
+    addButton.innerHTML = '<i class="bi bi-plus"></i>Add';
+    section.appendChild(addButton);
+
+    var items = (initialItems || []).slice();
+    if (!items.length) {
+      items = [""];
+    }
+
+    function renderRows() {
+      rows.innerHTML = "";
+      items.forEach(function (item, index) {
+        var row = document.createElement("div");
+        row.className = "designer-list-row";
+
+        var input = document.createElement("input");
+        input.type = "text";
+        input.className = "inspector-input";
+        input.placeholder = itemPlaceholder;
+        input.value = item;
+        input.addEventListener("input", function () {
+          items[index] = input.value;
+        });
+        row.appendChild(input);
+
+        var remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "tool-button designer-list-remove";
+        remove.setAttribute("aria-label", "Remove item");
+        remove.innerHTML = '<i class="bi bi-dash"></i>';
+        remove.addEventListener("click", function () {
+          items.splice(index, 1);
+          if (!items.length) {
+            items.push("");
+          }
+          renderRows();
+        });
+        row.appendChild(remove);
+
+        rows.appendChild(row);
+      });
+    }
+
+    addButton.addEventListener("click", function () {
+      items.push("");
+      renderRows();
+    });
+
+    renderRows();
+    return section;
+  }
+
+  function readListGroupValues(group) {
+    if (!group) {
+      return [];
+    }
+    return Array.prototype.slice.call(group.querySelectorAll("input")).map(function (input) {
+      return String(input.value || "").trim();
+    }).filter(Boolean);
   }
 
   MockApp.ui.inspector = {

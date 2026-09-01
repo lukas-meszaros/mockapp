@@ -17,6 +17,7 @@
       canvasStage: document.getElementById("canvas-stage"),
       canvasViewport: document.getElementById("canvas-viewport"),
       canvasRoot: document.getElementById("canvas-root"),
+      viewportRuler: document.getElementById("viewport-ruler"),
       pageTitle: document.getElementById("page-title"),
       viewportSelect: document.getElementById("viewport-select"),
       zoomLabel: document.getElementById("zoom-label"),
@@ -58,6 +59,7 @@
   function setViewportClass(refs, preset, zoom, gridVisible, gridSize) {
     refs.canvasStage.className = "canvas-stage viewport-" + preset + (gridVisible ? "" : " grid-hidden");
     refs.canvasStage.style.backgroundSize = ["auto", gridSize + "px " + gridSize + "px", gridSize + "px " + gridSize + "px", "auto"].join(", ");
+    refs.canvasViewport.style.setProperty("--mockapp-grid-size", gridSize + "px");
     refs.canvasViewport.style.transform = "scale(" + zoom + ")";
   }
 

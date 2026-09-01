@@ -11,8 +11,10 @@ Bootstrap version reference: 5.3.8
 - Buttons: Button
 - Forms: Text Input, Textarea, Select, Checkbox, Radio, Switch
 - Navigation: Navbar
-- Content: Card, Badge, Table
-- Feedback: Alert
+- Navigation: Navbar, Breadcrumb, Pagination, Tabs, Pills, Dropdown, Dropdown Button, Offcanvas Navigation
+- Content: Card, Badge, Table, Image, Figure, List Group
+- Feedback: Alert, Progress, Spinner, Toast, Placeholder
+- Interactive Bootstrap Components: Accordion, Collapse, Carousel, Tooltip, Popover
 - Templates: Login Form, Dashboard Grid
 
 ### Supported as composite
@@ -25,24 +27,13 @@ Bootstrap version reference: 5.3.8
 ### Represented visually later
 
 - Modal
-- Offcanvas
-- Accordion
-- Collapse
-- Dropdown
-- Tabs / Pills
-- Toast
-- Tooltip
-- Popover
-- Carousel
-- Progress
-- Spinner
+- Offcanvas (generic interactive variant)
 
 ### Planned later
 
 - Native per-component renderers for palette aliases that are currently represented via composites
 - True semantic implementations for radio/switch/range/file/floating-label/input-group
-- Dedicated renderers for nav tabs/pills/breadcrumb/pagination/dropdown/offcanvas
-- Dedicated renderers for list-group/image/figure/progress/spinner/toast/placeholder
+- Dedicated renderer for modal and generic offcanvas interactive variant
 
 ## Implemented component details
 
@@ -108,30 +99,30 @@ Bootstrap version reference: 5.3.8
 - Gutters: partially supported
 
 ### Components
-- Accordion: planned later
+- Accordion: supported
 - Alerts: supported
 - Badges: supported
-- Breadcrumb: represented visually later (palette entry available)
+- Breadcrumb: supported
 - Buttons: supported
 - Button group: represented visually later (palette entry available)
 - Card: supported
-- Carousel: represented visually later (palette entry available)
+- Carousel: supported
 - Close button: represented visually later (palette entry available)
-- Collapse: represented visually later (palette entry available)
-- Dropdowns: represented visually later (palette entry available)
-- List group: represented visually later (palette entry available)
+- Collapse: supported
+- Dropdowns: supported
+- List group: supported
 - Modal: represented visually later
 - Navbar: supported
-- Navs and tabs: represented visually later (palette entries available)
-- Offcanvas: represented visually later
-- Pagination: represented visually later (palette entry available)
-- Placeholders: represented visually later (palette entry available)
-- Popovers: represented visually later
-- Progress: represented visually later (palette entry available)
+- Navs and tabs: supported
+- Offcanvas: partially supported (navigation variant)
+- Pagination: supported
+- Placeholders: supported
+- Popovers: supported
+- Progress: supported
 - Scrollspy: not applicable in editor MVP
-- Spinners: represented visually later (palette entry available)
-- Toasts: represented visually later
-- Tooltips: represented visually later
+- Spinners: supported
+- Toasts: supported
+- Tooltips: supported
 
 ### Forms
 - Text input: supported

@@ -333,7 +333,7 @@ body.preview-mode .preview-exit-button {
 }
 
 body.preview-mode .workspace {
-  grid-template-columns: minmax(260px, 320px) 1fr;
+  grid-template-columns: 1fr;
 }
 
 body.preview-mode .panel-right {
@@ -341,16 +341,15 @@ body.preview-mode .panel-right {
 }
 
 body.preview-mode .panel-left {
-  display: flex;
+  display: none;
 }
 
 body.preview-mode .canvas-panel {
-  grid-column: 2;
+  grid-column: 1;
 }
 
 body.preview-mode .canvas-stage {
-  padding: 0;
-  background: #f0f4fa;
+  padding: 24px;
 }
 
 @media (max-width: 1200px) {

@@ -2,6 +2,7 @@
   var registry = MockApp.components.registry;
   var utils = MockApp.utils;
   var projectData = MockApp.data.project;
+  var MOST_COMMON_GROUP = "Most Common";
 
   function ensureSidebarBindings(controller) {
     bindPaletteEvents(controller);
@@ -19,6 +20,9 @@
     root.addEventListener("click", function (event) {
       var toggle = event.target.closest(".palette-group-toggle");
       if (toggle && root.contains(toggle)) {
+        if (toggle.dataset.paletteGroup === MOST_COMMON_GROUP) {
+          return;
+        }
         controller.actions.togglePaletteGroup(toggle.dataset.paletteGroup);
         return;
       }
@@ -63,19 +67,24 @@
 
     root.dataset.boundLayers = "true";
     root.addEventListener("click", function (event) {
-      var trigger = event.target.closest("[data-tree-action='select-component']");
-      if (trigger && root.contains(trigger)) {
-        controller.actions.selectOnly(trigger.dataset.componentId);
-        return;
-      }
-
       var layerAction = event.target.closest("[data-tree-action='layer-action']");
-      if (!layerAction || !root.contains(layerAction)) {
+      if (layerAction && root.contains(layerAction)) {
+        controller.actions.selectOnly(layerAction.dataset.componentId);
+        controller.actions.layerSelection(layerAction.dataset.layerDirection);
         return;
       }
 
-      controller.actions.selectOnly(layerAction.dataset.componentId);
-      controller.actions.layerSelection(layerAction.dataset.layerDirection);
+      var row = event.target.closest(".tree-row");
+      if (!row || !root.contains(row)) {
+        return;
+      }
+
+      var node = row.closest(".tree-node");
+      if (!node || !node.dataset.componentId) {
+        return;
+      }
+
+      controller.actions.selectOnly(node.dataset.componentId);
     });
 
     root.addEventListener("dragstart", function (event) {
@@ -132,18 +141,25 @@
       return haystack.indexOf(filter) >= 0;
     });
 
-    var groups = entries.reduce(function (result, entry) {
+    var groups = {};
+    var mostCommon = buildMostCommonEntries(entries);
+    if (mostCommon.length) {
+      groups[MOST_COMMON_GROUP] = mostCommon;
+    }
+
+    groups = entries.reduce(function (result, entry) {
       if (!result[entry.category]) {
         result[entry.category] = [];
       }
       result[entry.category].push(entry);
       return result;
-    }, {});
+    }, groups);
 
     refs.paletteRoot.innerHTML = "";
 
     Object.keys(groups).forEach(function (groupName) {
-      var isCollapsed = !filter && !!controller.state.ui.paletteCollapsed[groupName];
+      var isMostCommon = groupName === MOST_COMMON_GROUP;
+      var isCollapsed = !filter && !isMostCommon && controller.state.ui.paletteCollapsed[groupName] !== false;
       var group = document.createElement("section");
       group.className = "palette-group" + (isCollapsed ? " is-collapsed" : "");
       var titleRow = document.createElement("div");
@@ -157,6 +173,9 @@
       toggle.className = "palette-group-toggle";
       toggle.dataset.paletteGroup = groupName;
       toggle.setAttribute("aria-expanded", isCollapsed ? "false" : "true");
+      if (isMostCommon) {
+        toggle.disabled = true;
+      }
       toggle.innerHTML = '<i class="bi bi-chevron-' + (isCollapsed ? "down" : "up") + '"></i><span>' + groups[groupName].length + '</span>';
       titleRow.appendChild(toggle);
       group.appendChild(titleRow);
@@ -180,6 +199,17 @@
     if (!entries.length) {
       refs.paletteRoot.innerHTML = '<div class="empty-state">No components matched this search.</div>';
     }
+  }
+
+  function buildMostCommonEntries(entries) {
+    var byType = Object.create(null);
+    entries.forEach(function (entry) {
+      byType[entry.type] = entry;
+    });
+
+    return registry.getMostCommonTypes().map(function (type) {
+      return byType[type] || null;
+    }).filter(Boolean);
   }
 
   function renderPages(controller) {
@@ -227,20 +257,11 @@
     row.className = "tree-row";
     var main = document.createElement("div");
     main.className = "tree-main";
-    main.innerHTML = '<i class="bi bi-diagram-3"></i><span class="tree-name">' + utils.escapeHtml(component.name) + '</span>';
+    main.innerHTML = '<span class="tree-name">' + utils.escapeHtml(component.name) + '</span>';
     row.appendChild(main);
 
     var actions = document.createElement("div");
     actions.className = "panel-actions";
-    var selectButton = document.createElement("button");
-    selectButton.type = "button";
-    selectButton.className = "tree-button";
-    selectButton.innerHTML = '<i class="bi bi-cursor"></i>';
-    selectButton.title = "Select";
-    selectButton.dataset.treeAction = "select-component";
-    selectButton.dataset.componentId = component.id;
-    actions.appendChild(selectButton);
-
     if (isRootChild) {
       actions.appendChild(layerTreeButton(component.id, "forward", "arrow-up", "Move above"));
       actions.appendChild(layerTreeButton(component.id, "backward", "arrow-down", "Move below"));

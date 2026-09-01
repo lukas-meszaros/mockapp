@@ -4,7 +4,7 @@
 Purpose: Browser entry point and static application shell.
 Subsystem: App shell.
 Responsibilities: Loads vendor assets, panel layout, toolbars, dialog, toast region, and all runtime scripts.
-Depends on: `css/`, `js/`, `vendor/`.
+Depends on: `css/`, `js/`, `vendor/` (Bootstrap, Bootstrap Icons, html2canvas, Highlight.js).
 Modify when: Changing shell structure, adding UI mount points, changing load order.
 Do NOT modify when: Changing business logic only.
 
@@ -88,6 +88,46 @@ Depends on: None.
 Modify when: Versions, defaults, or shared enumerations change.
 Do NOT modify when: A value is local to one feature.
 
+## vendor/highlightjs/highlight.min.js
+Purpose: Vendored syntax highlighter runtime.
+Subsystem: Third-party runtime.
+Responsibilities: Tokenization and HTML rendering for syntax highlighting in code editors.
+Depends on: `vendor/highlightjs/languages/*.min.js`.
+Modify when: Upgrading Highlight.js.
+Do NOT modify when: Changing MockApp business logic.
+
+## vendor/highlightjs/languages/xml.min.js
+Purpose: Highlight.js XML/HTML language definition.
+Subsystem: Third-party runtime.
+Responsibilities: Language grammar for HTML/XML highlighting.
+Depends on: `vendor/highlightjs/highlight.min.js`.
+Modify when: Upgrading Highlight.js language packs.
+Do NOT modify when: Changing app code.
+
+## vendor/highlightjs/languages/css.min.js
+Purpose: Highlight.js CSS language definition.
+Subsystem: Third-party runtime.
+Responsibilities: Language grammar for CSS highlighting.
+Depends on: `vendor/highlightjs/highlight.min.js`.
+Modify when: Upgrading Highlight.js language packs.
+Do NOT modify when: Changing app code.
+
+## vendor/highlightjs/styles/github.min.css
+Purpose: Highlight.js editor theme.
+Subsystem: Third-party runtime.
+Responsibilities: Syntax token colors used by HTML/CSS editor fields.
+Depends on: Highlight.js token class output.
+Modify when: Adjusting syntax theme or upgrading Highlight.js styles.
+Do NOT modify when: Changing non-editor panel styles.
+
+## vendor/licenses/highlightjs-LICENSE
+Purpose: License text for Highlight.js.
+Subsystem: Compliance.
+Responsibilities: Stores redistributed third-party license.
+Depends on: `vendor/highlightjs/`.
+Modify when: Upgrading Highlight.js or license text changes.
+Do NOT modify when: App-only source changes.
+
 ## js/app/utils.js
 Purpose: Shared utilities.
 Subsystem: Runtime foundation.
@@ -123,7 +163,7 @@ Do NOT modify when: Adjusting generic project traversal or storage.
 ## js/data/project.js
 Purpose: Project tree model and invariants.
 Subsystem: Data model.
-Responsibilities: Creates projects/pages/components, normalizes persisted projects, validates project files, inserts, removes, clones, traverses, moves nodes, and persists freeform root frame geometry.
+Responsibilities: Creates projects/pages/components, normalizes persisted projects, validates project files, inserts, removes, clones, traverses, moves nodes, persists freeform root frame geometry, and stores per-component advanced HTML/CSS overrides.
 Depends on: `js/components/registry.js`, `js/app/utils.js`.
 Modify when: Changing JSON shape, freeform frame semantics, tree semantics, validation, or template construction.
 Do NOT modify when: Changing pure UI styling or toolbar layout.
@@ -147,7 +187,7 @@ Do NOT modify when: Changing component rendering.
 ## js/export/exporters.js
 Purpose: Export pipeline.
 Subsystem: Export.
-Responsibilities: Converts project content into HTML, PNG, SVG, and clipboard JSON output.
+Responsibilities: Converts project content into HTML, PNG, SVG, and clipboard JSON output; applies per-component code overrides and control-local render fallback handling.
 Depends on: `js/data/project.js`, `js/components/registry.js`, `vendor/html2canvas/html2canvas.min.js`.
 Modify when: Adding export formats or changing markup generation.
 Do NOT modify when: Changing toolbar bindings only.
@@ -171,7 +211,7 @@ Do NOT modify when: Changing data model invariants.
 ## js/ui/inspector.js
 Purpose: Structured property inspector renderer.
 Subsystem: Inspector UI.
-Responsibilities: Renders page settings, component fields, root-level frame controls, action controls from registry schema, and advanced designers (for example table and toolbar modals) for complex components.
+Responsibilities: Renders page settings, component fields, root-level frame controls, action controls from registry schema, advanced designers (for example table and toolbar modals), and per-component advanced HTML/CSS override editors with syntax highlighting previews.
 Depends on: `js/components/registry.js`, `js/data/project.js`, `js/app/utils.js`.
 Modify when: Changing property editing UX.
 Do NOT modify when: Adding low-level project traversal helpers.
@@ -179,7 +219,7 @@ Do NOT modify when: Adding low-level project traversal helpers.
 ## js/ui/canvas.js
 Purpose: Canvas renderer.
 Subsystem: Canvas UI.
-Responsibilities: Renders nested component nodes, freeform root placement, pointer-drag movement, drop surfaces, alignment guides, selection chrome, quick actions, live preview rendering, and marquee-based multi-selection. Includes interaction-smoothing behavior for drag/resize operations.
+Responsibilities: Renders nested component nodes, freeform root placement, pointer-drag movement, drop surfaces, alignment guides, selection chrome, quick actions, live preview rendering, marquee-based multi-selection, and direct per-control HTML/CSS editor launchers.
 Depends on: `js/data/project.js`, `js/components/registry.js`, `js/export/exporters.js`.
 Modify when: Changing canvas composition, freeform dragging, snapping, or drag/drop targets.
 Do NOT modify when: Changing export-only markup or persisted format rules.

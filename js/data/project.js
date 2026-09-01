@@ -32,6 +32,7 @@
     return {
       id: utils.uid("page"),
       name: name || "Page",
+      previewSurfaceTitle: "Responsive Bootstrap preview surface",
       viewportPreset: "desktop",
       layoutMode: "freeform",
       root: {
@@ -60,6 +61,10 @@
       type: type,
       name: definition.name,
       props: utils.deepClone(definition.defaults || {}),
+      code: {
+        html: "",
+        css: ""
+      },
       frame: utils.deepClone(registry.getDefaultFrame(type)),
       meta: { locked: false, hidden: false },
       children: []
@@ -241,7 +246,7 @@
       case "range":
         return makeInput("Range", "number", "50");
       case "file-input":
-        return makeInput("File", "text", "Choose file");
+        return makeInput("File", "file", "");
       case "input-group": {
         var inputGroup = createComponent("layout.row");
         inputGroup.name = "Input Group";
@@ -278,66 +283,52 @@
         return nav;
       }
       case "tabs": {
-        var tabs = createComponent("nav.navbar");
-        tabs.name = "Tabs";
-        tabs.props.brand = "Tabs";
-        tabs.props.linksText = "Overview\nDetails\nSettings";
-        return tabs;
+        return createComponent("nav.tabs");
       }
       case "pills": {
-        var pills = createComponent("nav.navbar");
-        pills.name = "Pills";
-        pills.props.brand = "Pills";
-        pills.props.linksText = "Active\nInactive\nArchived";
-        return pills;
+        return createComponent("nav.pills");
       }
       case "breadcrumb":
-        return makeParagraph("Breadcrumb", "Home / Dashboard / Users", false);
+        return createComponent("nav.breadcrumb");
       case "pagination":
-        return makeParagraph("Pagination", "Prev 1 2 3 Next", false);
+        return createComponent("nav.pagination");
       case "dropdown":
-        return makeButton("Dropdown", "Dropdown v", false);
+        return createComponent("nav.dropdown");
       case "dropdown-button":
-        return makeButton("Dropdown Button", "Actions v", false);
-      case "offcanvas-navigation": {
-        var offcanvas = makeCard("Offcanvas Navigation", "Menu", "Navigation links");
-        offcanvas.children.push(makeParagraph("Item", "Dashboard", false));
-        offcanvas.children.push(makeParagraph("Item", "Users", false));
-        return offcanvas;
-      }
-      case "list-group": {
-        var list = makeCard("List Group", "Items", "Item 1\nItem 2\nItem 3");
-        return list;
-      }
+        return createComponent("nav.dropdown-button");
+      case "offcanvas-navigation":
+        return createComponent("nav.offcanvas-navigation");
+      case "list-group":
+        return createComponent("content.list-group");
       case "responsive-table": {
         var responsiveTable = createComponent("data.table");
         responsiveTable.name = "Responsive Table";
         return responsiveTable;
       }
       case "image":
-        return makeParagraph("Image", "[Image Placeholder]", false);
+        return createComponent("content.image");
       case "figure":
-        return makeParagraph("Figure", "[Figure Placeholder] Caption", false);
+        return createComponent("content.figure");
       case "progress":
-        return makeParagraph("Progress", "Progress: 60%", false);
+        return createComponent("feedback.progress");
       case "spinner":
-        return makeParagraph("Spinner", "Loading...", false);
+        return createComponent("feedback.spinner");
       case "toast":
-        return makeCard("Toast", "Notification", "Task completed successfully.");
+        return createComponent("feedback.toast");
       case "placeholder":
-        return makeParagraph("Placeholder", "Loading placeholder content", false);
+        return createComponent("feedback.placeholder");
       case "modal":
         return makeCard("Modal", "Modal Title", "Modal body content");
       case "accordion":
-        return makeCard("Accordion", "Accordion Item", "Accordion body");
+        return createComponent("interactive.accordion");
       case "collapse":
-        return makeCard("Collapse", "Collapsible Section", "Hidden content");
+        return createComponent("interactive.collapse");
       case "carousel":
-        return makeCard("Carousel", "Slide 1", "Carousel preview");
+        return createComponent("interactive.carousel");
       case "tooltip":
-        return makeParagraph("Tooltip Representation", "Button [tooltip text]", false);
+        return createComponent("interactive.tooltip");
       case "popover":
-        return makeParagraph("Popover Representation", "Button [popover content]", false);
+        return createComponent("interactive.popover");
       case "registration-form": {
         var registration = makeCard("Registration Form", "Create account", "Join MockApp");
         registration.children.push(makeInput("Full Name", "text", "Alex Doe"));
@@ -419,9 +410,18 @@
     component.children = Array.isArray(component.children) ? component.children.map(normalizeComponent) : [];
     component.meta = component.meta || { locked: false, hidden: false };
     component.props = component.props || {};
+    component.code = normalizeCode(component.code);
     component.frame = normalizeFrame(component.frame, component.type);
     component.name = component.name || (registry.getDefinition(component.type) || {}).name || component.type;
     return component;
+  }
+
+  function normalizeCode(code) {
+    var source = code && typeof code === "object" ? code : {};
+    return {
+      html: String(source.html || ""),
+      css: String(source.css || "")
+    };
   }
 
   function normalizeFrame(frame, type) {
@@ -453,6 +453,7 @@
     var normalized = utils.deepClone(project);
     normalized.pages = Array.isArray(normalized.pages) ? normalized.pages : [];
     normalized.pages = normalized.pages.map(function (page) {
+      page.previewSurfaceTitle = page.previewSurfaceTitle || "Responsive Bootstrap preview surface";
       page.layoutMode = page.layoutMode || "freeform";
       page.root = page.root || {
         id: utils.uid("root"),

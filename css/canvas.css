@@ -47,7 +47,11 @@
 
 .viewport-frame {
   min-height: calc(100vh - 240px);
-  background: #fff;
+  background:
+    linear-gradient(90deg, var(--mockapp-grid) 1px, transparent 1px),
+    linear-gradient(0deg, var(--mockapp-grid) 1px, transparent 1px),
+    #fff;
+  background-size: var(--mockapp-grid-size, 8px) var(--mockapp-grid-size, 8px), var(--mockapp-grid-size, 8px) var(--mockapp-grid-size, 8px), auto;
   border: 1px solid rgba(167, 180, 201, 0.8);
   border-radius: 18px;
   box-shadow: var(--mockapp-shadow);
@@ -59,7 +63,16 @@
   border-bottom: 1px solid var(--mockapp-border);
   font-size: 0.78rem;
   color: var(--mockapp-muted);
-  background: linear-gradient(180deg, #fbfcfe 0%, #f3f6fa 100%);
+  background:
+    linear-gradient(180deg, rgba(251, 252, 254, 0.74) 0%, rgba(243, 246, 250, 0.74) 100%);
+}
+
+.canvas-stage.grid-hidden .viewport-frame {
+  background: #fff;
+}
+
+body.preview-mode .viewport-frame {
+  background: #fff;
 }
 
 .canvas-root {
@@ -234,6 +247,10 @@
   background: #fff;
 }
 
+.code-edit-trigger {
+  right: 42px;
+}
+
 .node-frame:hover .inline-edit-trigger,
 .node-frame.is-selected .inline-edit-trigger,
 .node-frame.is-editing .inline-edit-trigger {
@@ -327,26 +344,28 @@
   margin-bottom: 0 !important;
 }
 
-.node-preview > .btn,
-.node-preview > .badge,
 .node-preview > .alert,
+.node-preview > .mock-image,
+.node-preview > .mock-figure,
 .node-preview > .card,
 .node-preview > .table-responsive,
+.node-preview > .list-group,
+.node-preview > .toast,
+.node-preview > .accordion,
+.node-preview > .carousel,
 .node-preview > .navbar,
 .node-preview > .container,
 .node-preview > .container-fluid,
 .node-preview > .row,
 .node-preview > .col,
-.node-preview > [class*="col-"] {
+.node-preview > [class*="col-"],
+.node-preview > .mockapp-custom-control {
   width: 100%;
 }
 
 .node-preview > .btn,
 .node-preview > .badge {
-  min-height: inherit;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-block;
 }
 
 .node-preview > .mb-3 {
@@ -431,7 +450,39 @@
   background: var(--mockapp-panel-muted);
 }
 
-.node-frame.is-freeform > .node-preview > * {
+.mockapp-render-error {
+  border-style: solid;
+  border-color: rgba(183, 49, 49, 0.38);
+  background: rgba(255, 243, 243, 0.95);
+  color: #7a1f1f;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.mockapp-render-error strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.node-frame.is-freeform > .node-preview > .alert,
+.node-frame.is-freeform > .node-preview > .mock-image,
+.node-frame.is-freeform > .node-preview > .mock-figure,
+.node-frame.is-freeform > .node-preview > .card,
+.node-frame.is-freeform > .node-preview > .table-responsive,
+.node-frame.is-freeform > .node-preview > .list-group,
+.node-frame.is-freeform > .node-preview > .toast,
+.node-frame.is-freeform > .node-preview > .accordion,
+.node-frame.is-freeform > .node-preview > .carousel,
+.node-frame.is-freeform > .node-preview > .navbar,
+.node-frame.is-freeform > .node-preview > .container,
+.node-frame.is-freeform > .node-preview > .container-fluid,
+.node-frame.is-freeform > .node-preview > .row,
+.node-frame.is-freeform > .node-preview > .col,
+.node-frame.is-freeform > .node-preview > [class*="col-"],
+.node-frame.is-freeform > .node-preview > .mockapp-custom-control {
   min-height: inherit;
 }
 

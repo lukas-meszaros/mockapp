@@ -40,6 +40,13 @@ Future format upgrades should use dedicated migration functions rather than in-p
 
 Components are nested objects through `children[]`. This makes containment explicit and keeps export traversal simple. Root-level components also persist a `frame` object so freeform canvas placement survives save, load, and export.
 
+Components may include an optional `code` object for advanced per-control overrides:
+
+- `code.html`: raw HTML override for the control instance
+- `code.css`: raw CSS override for the control instance
+
+When either override is invalid, rendering falls back to a control-local render error placeholder.
+
 ## Validation rules
 
 Imported projects must reject or flag the following:
@@ -74,6 +81,7 @@ Imported projects must reject or flag the following:
     {
       "id": "page-dashboard",
       "name": "Dashboard",
+      "previewSurfaceTitle": "Responsive Bootstrap preview surface",
       "viewportPreset": "desktop",
       "layoutMode": "freeform",
       "root": {
@@ -82,7 +90,18 @@ Imported projects must reject or flag the following:
         "name": "Canvas Root",
         "props": {},
         "meta": { "locked": false, "hidden": false },
-        "children": []
+        "children": [
+          {
+            "id": "cmp-card-1",
+            "type": "content.card",
+            "name": "Card",
+            "frame": { "x": 48, "y": 48, "width": 320, "height": 220 },
+            "props": { "title": "Card title", "text": "Card body" },
+            "code": { "html": "", "css": "" },
+            "meta": { "locked": false, "hidden": false },
+            "children": []
+          }
+        ]
       }
     }
   ],

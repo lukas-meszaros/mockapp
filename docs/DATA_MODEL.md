@@ -32,6 +32,7 @@ Each page owns a root node and a viewport preset.
 {
   "id": "page-1",
   "name": "Dashboard",
+  "previewSurfaceTitle": "Responsive Bootstrap preview surface",
   "viewportPreset": "desktop",
   "layoutMode": "freeform",
   "root": {
@@ -62,6 +63,10 @@ Each page owns a root node and a viewport preset.
     "title": "Card title",
     "text": "Card body"
   },
+  "code": {
+    "html": "",
+    "css": ""
+  },
   "meta": {
     "locked": false,
     "hidden": false
@@ -69,6 +74,8 @@ Each page owns a root node and a viewport preset.
   "children": []
 }
 ```
+
+`code.html` and `code.css` are per-component advanced overrides. When empty, the normal schema-driven renderer is used.
 
 ## Selection
 

@@ -2,6 +2,7 @@
   var projectData = MockApp.data.project;
   var registry = MockApp.components.registry;
   var exporters = MockApp.exporters.api;
+  var inspectorUi = MockApp.ui.inspector;
   var utils = MockApp.utils;
   var SNAP_THRESHOLD = 8;
   var MIN_FRAME_WIDTH = 80;
@@ -25,6 +26,9 @@
     var refs = controller.refs;
     var page = projectData.getActivePage(controller.state.project);
     refs.pageTitle.textContent = page.name;
+    if (refs.viewportRuler) {
+      refs.viewportRuler.textContent = page.previewSurfaceTitle || "Responsive Bootstrap preview surface";
+    }
     refs.canvasRoot.innerHTML = "";
     refs.canvasRoot.classList.remove("is-dragover");
 
@@ -54,7 +58,7 @@
     preview.innerHTML = (page.root.children || []).map(function (component, rootLayerIndex) {
       var html = exporters.renderComponentHtml(component, true, {
         isRootChild: false,
-        hideLabels: false,
+        hideLabels: true,
         preserveLineBreaks: true,
         inlineEditing: false
       });
@@ -62,6 +66,29 @@
     }).join("\n");
 
     controller.refs.canvasRoot.appendChild(preview);
+    initializePreviewBootstrapWidgets(preview);
+  }
+
+  function initializePreviewBootstrapWidgets(root) {
+    if (!window.bootstrap || !root) {
+      return;
+    }
+
+    root.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (node) {
+      try {
+        new window.bootstrap.Tooltip(node);
+      } catch (error) {
+        // Ignore invalid tooltip initialization in preview.
+      }
+    });
+
+    root.querySelectorAll('[data-bs-toggle="popover"]').forEach(function (node) {
+      try {
+        new window.bootstrap.Popover(node);
+      } catch (error) {
+        // Ignore invalid popover initialization in preview.
+      }
+    });
   }
 
   function liveFrameStyle(frame, rootLayerIndex) {
@@ -142,6 +169,7 @@
     if (inlineEditTarget) {
       frame.appendChild(createInlineEditTrigger(controller, component, inlineEditTarget));
     }
+    frame.appendChild(createCodeEditTrigger(controller, component));
 
     var inlineEdit = controller.state.ui.inlineEdit;
     if (inlineEdit && inlineEdit.componentId === component.id) {
@@ -390,6 +418,23 @@
       event.preventDefault();
       event.stopPropagation();
       controller.actions.beginInlineEdit(component.id, editTarget.fieldPath, editTarget.multiline);
+    });
+    return button;
+  }
+
+  function createCodeEditTrigger(controller, component) {
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "inline-edit-trigger code-edit-trigger";
+    button.setAttribute("aria-label", "Edit HTML/CSS");
+    button.innerHTML = '<i class="bi bi-code-slash"></i>';
+    button.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      controller.actions.selectOnly(component.id);
+      if (inspectorUi && typeof inspectorUi.openComponentCodeEditor === "function") {
+        inspectorUi.openComponentCodeEditor(controller, component.id);
+      }
     });
     return button;
   }

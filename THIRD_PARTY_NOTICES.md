@@ -22,3 +22,10 @@ MockApp vendors the following third-party libraries for offline runtime use.
 - License: MIT
 - Vendored files: `vendor/html2canvas/`
 - License file: `vendor/licenses/html2canvas-LICENSE`
+
+## Highlight.js
+- Project: https://highlightjs.org/
+- Version: 11.10.0
+- License: BSD-3-Clause
+- Vendored files: `vendor/highlightjs/`
+- License file: `vendor/licenses/highlightjs-LICENSE`

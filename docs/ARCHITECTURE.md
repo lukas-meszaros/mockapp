@@ -90,6 +90,10 @@ The saved project model contains pages, explicit nested component trees, metadat
 
 - The canvas renders trusted internal HTML templates generated from component metadata and escaped user content.
 - The inspector is schema-driven from registry field definitions.
+- Selected controls can optionally provide per-instance `code.html` and `code.css` overrides through the inspector.
+- The same HTML/CSS editor is also launchable directly from each control on the canvas.
+- CSS overrides are scoped to the owning control wrapper to reduce cross-control style bleed.
+- If an override fails validation, only that control renders an inline error placeholder.
 - The tree view and page list are separate left-panel surfaces.
 - The page root is a freeform placement surface by default, while nested layout components still preserve Bootstrap semantics.
 
@@ -145,7 +149,7 @@ Current drag-and-drop behavior supports:
 ## Security notes
 
 - User-controlled text is escaped before insertion into trusted templates.
-- Raw HTML editing is intentionally excluded.
+- Advanced per-control HTML/CSS overrides are supported; script tags are rejected in HTML overrides.
 - Component rendering is centralized to reduce accidental unsafe DOM writes.
 
 ## File protocol strategy

@@ -5,6 +5,7 @@
     PROJECT_VERSION: 1,
     BOOTSTRAP_VERSION: "5.3.8",
     BOOTSTRAP_ICONS_VERSION: "1.13.1",
+    HIGHLIGHTJS_VERSION: "11.10.0",
     STORAGE_KEYS: {
       AUTOSAVE: "mockapp.autosave.v1",
       PREFERENCES: "mockapp.preferences.v1",

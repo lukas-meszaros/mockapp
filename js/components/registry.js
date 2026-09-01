@@ -1,6 +1,18 @@
 (function (MockApp) {
   var GRID_OPTIONS = MockApp.app.constants.GRID_OPTIONS;
   var BREAKPOINTS = MockApp.app.constants.BREAKPOINTS;
+  var MOST_COMMON_TYPES = [
+    "action.button",
+    "form.input",
+    "form.textarea",
+    "form.select",
+    "form.checkbox",
+    "form.radio",
+    "form.switch",
+    "content.heading",
+    "content.paragraph",
+    "content.card"
+  ];
 
   function breakpointFields(prefix, labelPrefix) {
     return BREAKPOINTS.map(function (breakpoint) {
@@ -121,7 +133,7 @@
         { path: "props.label", label: "Label", type: "text" },
         { path: "props.placeholder", label: "Placeholder", type: "text" },
         { path: "props.value", label: "Value", type: "text" },
-        { path: "props.inputType", label: "Type", type: "select", options: ["text", "email", "password", "number", "search", "tel", "url"] },
+        { path: "props.inputType", label: "Type", type: "select", options: ["text", "email", "password", "number", "search", "tel", "url", "file"] },
         { path: "props.required", label: "Required", type: "checkbox" }
       ]
     },
@@ -207,6 +219,39 @@
       ]
     },
     {
+      type: "feedback.progress",
+      name: "Progress",
+      icon: "activity",
+      category: "Feedback",
+      tags: ["progress", "meter", "feedback"],
+      allowsChildren: false,
+      defaults: { value: 60, label: "60%", showLabel: true, striped: true, animated: false, variant: "primary" },
+      fields: [
+        { path: "props.value", label: "Value", type: "number", min: 0, max: 100 },
+        { path: "props.label", label: "Label", type: "text" },
+        { path: "props.showLabel", label: "Show Label", type: "checkbox" },
+        { path: "props.striped", label: "Striped", type: "checkbox" },
+        { path: "props.animated", label: "Animated", type: "checkbox" },
+        { path: "props.variant", label: "Variant", type: "select", options: ["primary", "secondary", "success", "danger", "warning", "info", "dark"] }
+      ]
+    },
+    {
+      type: "feedback.spinner",
+      name: "Spinner",
+      icon: "arrow-repeat",
+      category: "Feedback",
+      tags: ["spinner", "loading", "feedback"],
+      allowsChildren: false,
+      defaults: { spinnerType: "border", size: "md", variant: "primary", label: "Loading...", showLabel: true },
+      fields: [
+        { path: "props.spinnerType", label: "Type", type: "select", options: ["border", "grow"] },
+        { path: "props.size", label: "Size", type: "select", options: ["sm", "md", "lg"] },
+        { path: "props.variant", label: "Variant", type: "select", options: ["primary", "secondary", "success", "danger", "warning", "info", "dark"] },
+        { path: "props.label", label: "Label", type: "text" },
+        { path: "props.showLabel", label: "Show Label", type: "checkbox" }
+      ]
+    },
+    {
       type: "content.badge",
       name: "Badge",
       icon: "bookmark-fill",
@@ -218,6 +263,54 @@
         { path: "props.text", label: "Text", type: "text" },
         { path: "props.variant", label: "Variant", type: "select", options: ["primary", "secondary", "success", "danger", "warning", "info", "dark"] },
         { path: "props.pill", label: "Pill", type: "checkbox" }
+      ]
+    },
+    {
+      type: "content.image",
+      name: "Image",
+      icon: "image",
+      category: "Content",
+      tags: ["image", "media", "content"],
+      allowsChildren: false,
+      defaults: {
+        src: "",
+        alt: "Image",
+        fit: "cover",
+        placeholderText: "Image Placeholder",
+        placeholderColor: "#d9e2f0"
+      },
+      fields: [
+        { path: "props.src", label: "Image Source", type: "text" },
+        { path: "props.__upload", label: "Upload Image", type: "image-upload", accept: "image/*" },
+        { path: "props.alt", label: "Alt Text", type: "text" },
+        { path: "props.fit", label: "Object Fit", type: "select", options: ["cover", "contain", "fill", "scale-down", "none"] },
+        { path: "props.placeholderText", label: "Placeholder Text", type: "text" },
+        { path: "props.placeholderColor", label: "Placeholder Color", type: "color" }
+      ]
+    },
+    {
+      type: "content.figure",
+      name: "Figure",
+      icon: "card-image",
+      category: "Content",
+      tags: ["figure", "caption", "content"],
+      allowsChildren: false,
+      defaults: {
+        src: "",
+        alt: "Figure image",
+        caption: "Figure caption",
+        fit: "cover",
+        placeholderText: "Figure Placeholder",
+        placeholderColor: "#d9e2f0"
+      },
+      fields: [
+        { path: "props.src", label: "Image Source", type: "text" },
+        { path: "props.__upload", label: "Upload Image", type: "image-upload", accept: "image/*" },
+        { path: "props.alt", label: "Alt Text", type: "text" },
+        { path: "props.caption", label: "Caption", type: "text" },
+        { path: "props.fit", label: "Object Fit", type: "select", options: ["cover", "contain", "fill", "scale-down", "none"] },
+        { path: "props.placeholderText", label: "Placeholder Text", type: "text" },
+        { path: "props.placeholderColor", label: "Placeholder Color", type: "color" }
       ]
     },
     {
@@ -247,6 +340,219 @@
         { path: "props.linksText", label: "Links", type: "list", separator: "\n", itemPlaceholder: "Navigation item" },
         { path: "props.theme", label: "Theme", type: "select", options: ["light", "dark"] },
         { path: "props.background", label: "Background", type: "select", options: ["light", "dark", "primary", "body-tertiary"] }
+      ]
+    },
+    {
+      type: "nav.breadcrumb",
+      name: "Breadcrumb",
+      icon: "chevron-right",
+      category: "Navigation",
+      tags: ["breadcrumb", "path", "navigation"],
+      allowsChildren: false,
+      defaults: { itemsText: "Home\nLibrary\nData" },
+      fields: [
+        { path: "props.itemsText", label: "Items", type: "list", separator: "\n", itemPlaceholder: "Breadcrumb item" }
+      ]
+    },
+    {
+      type: "nav.pagination",
+      name: "Pagination",
+      icon: "arrow-left-right",
+      category: "Navigation",
+      tags: ["pagination", "pages", "navigation"],
+      allowsChildren: false,
+      defaults: { itemsText: "Previous\n1\n2\n3\nNext", activeIndex: 3, size: "md", align: "start" },
+      fields: [
+        { path: "props.itemsText", label: "Items", type: "list", separator: "\n", itemPlaceholder: "Page item" },
+        { path: "props.activeIndex", label: "Active Index", type: "number", min: 1, max: 20 },
+        { path: "props.size", label: "Size", type: "select", options: ["sm", "md", "lg"] },
+        { path: "props.align", label: "Alignment", type: "select", options: ["start", "center", "end"] }
+      ]
+    },
+    {
+      type: "nav.tabs",
+      name: "Tabs",
+      icon: "folder2-open",
+      category: "Navigation",
+      tags: ["tabs", "nav", "navigation"],
+      allowsChildren: false,
+      defaults: { itemsText: "Overview\nDetails\nSettings", activeIndex: 1, fill: false, justified: false },
+      fields: [
+        { path: "props.itemsText", label: "Items", type: "list", separator: "\n", itemPlaceholder: "Tab label" },
+        { path: "props.activeIndex", label: "Active Index", type: "number", min: 1, max: 20 },
+        { path: "props.fill", label: "Fill Width", type: "checkbox" },
+        { path: "props.justified", label: "Justified", type: "checkbox" }
+      ]
+    },
+    {
+      type: "nav.pills",
+      name: "Pills",
+      icon: "capsule",
+      category: "Navigation",
+      tags: ["pills", "nav", "navigation"],
+      allowsChildren: false,
+      defaults: { itemsText: "Active\nInactive\nArchived", activeIndex: 1, fill: false, justified: false },
+      fields: [
+        { path: "props.itemsText", label: "Items", type: "list", separator: "\n", itemPlaceholder: "Pill label" },
+        { path: "props.activeIndex", label: "Active Index", type: "number", min: 1, max: 20 },
+        { path: "props.fill", label: "Fill Width", type: "checkbox" },
+        { path: "props.justified", label: "Justified", type: "checkbox" }
+      ]
+    },
+    {
+      type: "nav.dropdown",
+      name: "Dropdown",
+      icon: "menu-button-wide",
+      category: "Navigation",
+      tags: ["dropdown", "menu", "navigation"],
+      allowsChildren: false,
+      defaults: { label: "Dropdown", itemsText: "Action\nAnother action\nSomething else", variant: "secondary" },
+      fields: [
+        { path: "props.label", label: "Label", type: "text" },
+        { path: "props.itemsText", label: "Items", type: "list", separator: "\n", itemPlaceholder: "Menu item" },
+        { path: "props.variant", label: "Variant", type: "select", options: ["primary", "secondary", "success", "danger", "warning", "info", "dark", "light"] }
+      ]
+    },
+    {
+      type: "nav.dropdown-button",
+      name: "Dropdown Button",
+      icon: "menu-button",
+      category: "Navigation",
+      tags: ["dropdown", "button", "navigation"],
+      allowsChildren: false,
+      defaults: { label: "Actions", itemsText: "Edit\nDuplicate\nArchive", variant: "primary" },
+      fields: [
+        { path: "props.label", label: "Label", type: "text" },
+        { path: "props.itemsText", label: "Items", type: "list", separator: "\n", itemPlaceholder: "Menu item" },
+        { path: "props.variant", label: "Variant", type: "select", options: ["primary", "secondary", "success", "danger", "warning", "info", "dark", "light"] }
+      ]
+    },
+    {
+      type: "nav.offcanvas-navigation",
+      name: "Offcanvas Navigation",
+      icon: "layout-sidebar",
+      category: "Navigation",
+      tags: ["offcanvas", "sidebar", "navigation"],
+      allowsChildren: false,
+      defaults: { buttonText: "Open Menu", title: "Menu", itemsText: "Dashboard\nProjects\nSettings", placement: "start" },
+      fields: [
+        { path: "props.buttonText", label: "Button Text", type: "text" },
+        { path: "props.title", label: "Panel Title", type: "text" },
+        { path: "props.itemsText", label: "Items", type: "list", separator: "\n", itemPlaceholder: "Navigation item" },
+        { path: "props.placement", label: "Placement", type: "select", options: ["start", "end", "top", "bottom"] }
+      ]
+    },
+    {
+      type: "content.list-group",
+      name: "List Group",
+      icon: "list-ul",
+      category: "Content",
+      tags: ["list", "group", "content"],
+      allowsChildren: false,
+      defaults: { itemsText: "First item\nSecond item\nThird item", activeIndex: 1, flush: false, numbered: false },
+      fields: [
+        { path: "props.itemsText", label: "Items", type: "list", separator: "\n", itemPlaceholder: "List item" },
+        { path: "props.activeIndex", label: "Active Index", type: "number", min: 1, max: 20 },
+        { path: "props.flush", label: "Flush", type: "checkbox" },
+        { path: "props.numbered", label: "Numbered", type: "checkbox" }
+      ]
+    },
+    {
+      type: "feedback.toast",
+      name: "Toast",
+      icon: "chat-square-text",
+      category: "Feedback",
+      tags: ["toast", "notification", "feedback"],
+      allowsChildren: false,
+      defaults: { title: "Notification", message: "Task completed successfully.", timestamp: "just now" },
+      fields: [
+        { path: "props.title", label: "Title", type: "text" },
+        { path: "props.message", label: "Message", type: "textarea" },
+        { path: "props.timestamp", label: "Timestamp", type: "text" }
+      ]
+    },
+    {
+      type: "feedback.placeholder",
+      name: "Placeholder",
+      icon: "dash-square-dotted",
+      category: "Feedback",
+      tags: ["placeholder", "skeleton", "feedback"],
+      allowsChildren: false,
+      defaults: { rows: 3, animated: true },
+      fields: [
+        { path: "props.rows", label: "Rows", type: "number", min: 1, max: 8 },
+        { path: "props.animated", label: "Animated", type: "checkbox" }
+      ]
+    },
+    {
+      type: "interactive.accordion",
+      name: "Accordion",
+      icon: "list-nested",
+      category: "Interactive Bootstrap Components",
+      tags: ["accordion", "interactive", "bootstrap"],
+      allowsChildren: false,
+      defaults: { headersText: "Section One\nSection Two\nSection Three", bodiesText: "First body\nSecond body\nThird body", flush: false },
+      fields: [
+        { path: "props.headersText", label: "Headers", type: "list", separator: "\n", itemPlaceholder: "Accordion header" },
+        { path: "props.bodiesText", label: "Bodies", type: "list", separator: "\n", itemPlaceholder: "Accordion body" },
+        { path: "props.flush", label: "Flush", type: "checkbox" }
+      ]
+    },
+    {
+      type: "interactive.collapse",
+      name: "Collapse",
+      icon: "arrows-collapse",
+      category: "Interactive Bootstrap Components",
+      tags: ["collapse", "interactive", "bootstrap"],
+      allowsChildren: false,
+      defaults: { buttonText: "Toggle details", content: "Hidden content", shown: false },
+      fields: [
+        { path: "props.buttonText", label: "Button Text", type: "text" },
+        { path: "props.content", label: "Content", type: "textarea" },
+        { path: "props.shown", label: "Shown by Default", type: "checkbox" }
+      ]
+    },
+    {
+      type: "interactive.carousel",
+      name: "Carousel",
+      icon: "images",
+      category: "Interactive Bootstrap Components",
+      tags: ["carousel", "interactive", "bootstrap"],
+      allowsChildren: false,
+      defaults: { slidesText: "Slide One\nSlide Two\nSlide Three", dark: false, autoPlay: false },
+      fields: [
+        { path: "props.slidesText", label: "Slides", type: "list", separator: "\n", itemPlaceholder: "Slide title" },
+        { path: "props.dark", label: "Dark Controls", type: "checkbox" },
+        { path: "props.autoPlay", label: "Auto Play", type: "checkbox" }
+      ]
+    },
+    {
+      type: "interactive.tooltip",
+      name: "Tooltip",
+      icon: "info-circle",
+      category: "Interactive Bootstrap Components",
+      tags: ["tooltip", "interactive", "bootstrap"],
+      allowsChildren: false,
+      defaults: { buttonText: "Hover me", title: "Tooltip text", placement: "top" },
+      fields: [
+        { path: "props.buttonText", label: "Button Text", type: "text" },
+        { path: "props.title", label: "Tooltip Text", type: "text" },
+        { path: "props.placement", label: "Placement", type: "select", options: ["top", "right", "bottom", "left"] }
+      ]
+    },
+    {
+      type: "interactive.popover",
+      name: "Popover",
+      icon: "chat-left-quote",
+      category: "Interactive Bootstrap Components",
+      tags: ["popover", "interactive", "bootstrap"],
+      allowsChildren: false,
+      defaults: { buttonText: "Show popover", title: "Popover title", content: "Popover body content.", placement: "right" },
+      fields: [
+        { path: "props.buttonText", label: "Button Text", type: "text" },
+        { path: "props.title", label: "Title", type: "text" },
+        { path: "props.content", label: "Content", type: "textarea" },
+        { path: "props.placement", label: "Placement", type: "select", options: ["top", "right", "bottom", "left"] }
       ]
     },
     {
@@ -300,28 +606,12 @@
     templateEntry("form.form-group", "Form Group", "ui-radios-grid", "Forms", ["form", "group", "controls"], "form-group"),
     templateEntry("form.validation-state", "Validation State", "check2-circle", "Forms", ["validation", "state", "form"], "validation-state"),
     templateEntry("nav.nav", "Nav", "list", "Navigation", ["nav", "navigation", "links"], "nav"),
-    templateEntry("nav.tabs", "Tabs", "folder2-open", "Navigation", ["tabs", "nav", "navigation"], "tabs"),
-    templateEntry("nav.pills", "Pills", "capsule", "Navigation", ["pills", "nav", "navigation"], "pills"),
-    templateEntry("nav.breadcrumb", "Breadcrumb", "chevron-right", "Navigation", ["breadcrumb", "path", "navigation"], "breadcrumb"),
-    templateEntry("nav.pagination", "Pagination", "arrow-left-right", "Navigation", ["pagination", "pages", "navigation"], "pagination"),
-    templateEntry("nav.dropdown", "Dropdown", "menu-button-wide", "Navigation", ["dropdown", "menu", "navigation"], "dropdown"),
-    templateEntry("nav.dropdown-button", "Dropdown Button", "menu-button", "Navigation", ["dropdown", "button", "navigation"], "dropdown-button"),
-    templateEntry("nav.offcanvas-navigation", "Offcanvas Navigation", "layout-sidebar", "Navigation", ["offcanvas", "sidebar", "navigation"], "offcanvas-navigation"),
-    templateEntry("content.list-group", "List Group", "list-ul", "Content", ["list", "group", "content"], "list-group"),
+    
     templateEntry("data.responsive-table", "Responsive Table", "table", "Content", ["table", "responsive", "data"], "responsive-table"),
-    templateEntry("content.image", "Image", "image", "Content", ["image", "media", "content"], "image"),
-    templateEntry("content.figure", "Figure", "card-image", "Content", ["figure", "caption", "content"], "figure"),
-    templateEntry("feedback.progress", "Progress", "activity", "Feedback", ["progress", "meter", "feedback"], "progress"),
-    templateEntry("feedback.spinner", "Spinner", "arrow-repeat", "Feedback", ["spinner", "loading", "feedback"], "spinner"),
-    templateEntry("feedback.toast", "Toast", "chat-square-text", "Feedback", ["toast", "notification", "feedback"], "toast"),
-    templateEntry("feedback.placeholder", "Placeholder", "dash-square-dotted", "Feedback", ["placeholder", "skeleton", "feedback"], "placeholder"),
-    templateEntry("interactive.accordion", "Accordion", "list-nested", "Interactive Bootstrap Components", ["accordion", "interactive", "bootstrap"], "accordion"),
-    templateEntry("interactive.collapse", "Collapse", "arrows-collapse", "Interactive Bootstrap Components", ["collapse", "interactive", "bootstrap"], "collapse"),
-    templateEntry("interactive.carousel", "Carousel", "images", "Interactive Bootstrap Components", ["carousel", "interactive", "bootstrap"], "carousel"),
+    
     templateEntry("interactive.modal", "Modal", "window-stack", "Interactive Bootstrap Components", ["modal", "interactive", "bootstrap"], "modal"),
     templateEntry("interactive.offcanvas", "Offcanvas", "layout-sidebar-reverse", "Interactive Bootstrap Components", ["offcanvas", "interactive", "bootstrap"], "offcanvas-navigation"),
-    templateEntry("interactive.tooltip", "Tooltip Representation", "info-circle", "Interactive Bootstrap Components", ["tooltip", "interactive", "bootstrap"], "tooltip"),
-    templateEntry("interactive.popover", "Popover Representation", "chat-left-quote", "Interactive Bootstrap Components", ["popover", "interactive", "bootstrap"], "popover"),
+    
     {
       type: "template.login",
       name: "Login Form",
@@ -382,6 +672,10 @@
     return definition ? sharedFields.concat(definition.fields || []) : sharedFields.slice();
   }
 
+  function getMostCommonTypes() {
+    return MOST_COMMON_TYPES.slice();
+  }
+
   function canAcceptChild(parentType, childType) {
     if (!childType) {
       return false;
@@ -435,6 +729,41 @@
         return { x: 48, y: 48, width: 180, height: 72 };
       case "content.badge":
         return { x: 48, y: 48, width: 140, height: 64 };
+      case "content.image":
+        return { x: 48, y: 48, width: 320, height: 220 };
+      case "content.figure":
+        return { x: 48, y: 48, width: 340, height: 260 };
+      case "feedback.progress":
+        return { x: 48, y: 48, width: 360, height: 88 };
+      case "feedback.spinner":
+        return { x: 48, y: 48, width: 220, height: 120 };
+      case "nav.breadcrumb":
+        return { x: 48, y: 48, width: 380, height: 72 };
+      case "nav.pagination":
+        return { x: 48, y: 48, width: 440, height: 84 };
+      case "nav.tabs":
+      case "nav.pills":
+        return { x: 48, y: 48, width: 460, height: 84 };
+      case "nav.dropdown":
+      case "nav.dropdown-button":
+        return { x: 48, y: 48, width: 240, height: 88 };
+      case "nav.offcanvas-navigation":
+        return { x: 48, y: 48, width: 300, height: 88 };
+      case "content.list-group":
+        return { x: 48, y: 48, width: 320, height: 200 };
+      case "feedback.toast":
+        return { x: 48, y: 48, width: 360, height: 170 };
+      case "feedback.placeholder":
+        return { x: 48, y: 48, width: 320, height: 150 };
+      case "interactive.accordion":
+        return { x: 48, y: 48, width: 420, height: 260 };
+      case "interactive.collapse":
+        return { x: 48, y: 48, width: 360, height: 180 };
+      case "interactive.carousel":
+        return { x: 48, y: 48, width: 500, height: 260 };
+      case "interactive.tooltip":
+      case "interactive.popover":
+        return { x: 48, y: 48, width: 240, height: 100 };
       default:
         return { x: 48, y: 48, width: 320, height: 160 };
     }
@@ -443,6 +772,7 @@
   MockApp.components.registry = {
     getDefinition: getDefinition,
     getPaletteEntries: getPaletteEntries,
+    getMostCommonTypes: getMostCommonTypes,
     getFieldSchema: getFieldSchema,
     canAcceptChild: canAcceptChild,
     getDefaultFrame: getDefaultFrame

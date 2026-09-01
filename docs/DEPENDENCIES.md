@@ -23,6 +23,13 @@
 - Source: `vendor/html2canvas/`
 - Update procedure: replace the vendored file and re-test PNG export in each target browser
 
+### Highlight.js
+- Version: 11.10.0
+- License: BSD-3-Clause
+- Purpose: client-side syntax highlighting for control-level HTML/CSS editors
+- Source: `vendor/highlightjs/`
+- Update procedure: replace vendored runtime, language packs, and theme CSS; re-test code editing from both inspector actions and canvas code triggers
+
 ## Development dependencies
 
 No npm-based development dependency chain is required for the current implementation.

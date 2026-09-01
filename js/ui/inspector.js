@@ -2,6 +2,7 @@
   var shell = MockApp.ui.shell;
   var registry = MockApp.components.registry;
   var projectData = MockApp.data.project;
+  var exporters = MockApp.exporters.api;
   var utils = MockApp.utils;
 
   function renderInspector(controller) {
@@ -27,6 +28,7 @@
       refs.inspectorRoot.appendChild(renderFrameSection(controller, component));
     }
     refs.inspectorRoot.appendChild(renderFieldGrid(controller, component, schema));
+    refs.inspectorRoot.appendChild(renderCodeEditorSection(controller, component));
     refs.inspectorRoot.appendChild(renderComponentActions(controller, component));
   }
 
@@ -96,6 +98,9 @@
     }));
     grid.appendChild(renderPageField(controller, "Page Name", page.name, function (value) {
       controller.actions.renameActivePage(value);
+    }));
+    grid.appendChild(renderPageField(controller, "Preview Surface Name", page.previewSurfaceTitle, function (value) {
+      controller.actions.renamePreviewSurface(value);
     }));
     grid.appendChild(renderPageSelect(controller, "Viewport", page.viewportPreset, Object.keys(MockApp.app.constants.VIEWPORTS), function (value) {
       controller.actions.setViewportPreset(value);
@@ -169,8 +174,258 @@
       }));
     }
 
+    actions.appendChild(actionButton("Edit HTML/CSS", "code-slash", function () {
+      openComponentCodeEditor(controller, component.id, "html");
+    }));
+
     section.appendChild(actions);
     return section;
+  }
+
+  function openComponentCodeEditor(controller, componentOrId, field) {
+    var componentId = typeof componentOrId === "string" ? componentOrId : (componentOrId && componentOrId.id);
+    focusComponentCodeEditor(controller, componentId, field || "html");
+  }
+
+  function resolveComponentById(controller, componentId) {
+    if (!componentId) {
+      return null;
+    }
+    var page = projectData.getActivePage(controller.state.project);
+    return projectData.findComponentContext(page, componentId, projectData.buildContextIndex(page));
+  }
+
+  function renderCodeEditorSection(controller, component) {
+    var section = document.createElement("section");
+    section.className = "inspector-section";
+    var title = document.createElement("h3");
+    title.className = "inspector-title";
+    title.textContent = "Advanced Code";
+    section.appendChild(title);
+
+    var note = document.createElement("div");
+    note.className = "field-help";
+    note.textContent = "Override this control with custom HTML and CSS. Invalid code shows a render error on this control only.";
+    section.appendChild(note);
+
+    var code = component.code || { html: "", css: "" };
+    var effectiveHtml = String(code.html || "").trim();
+    if (!effectiveHtml) {
+      effectiveHtml = exporters.renderComponentHtml(component, false, {
+        isRootChild: false,
+        hideLabels: false,
+        preserveLineBreaks: true,
+        inlineEditing: false,
+        skipCodeOverride: true
+      });
+    }
+
+    var draft = {
+      html: effectiveHtml,
+      css: String(code.css || "")
+    };
+    var baseline = {
+      html: draft.html,
+      css: draft.css
+    };
+
+    var htmlEditor = renderCodeField("HTML", "html", draft.html, function (value) {
+      draft.html = value;
+      updateCodeDirtyState(section, baseline, draft);
+    });
+    var cssEditor = renderCodeField("CSS", "css", draft.css, function (value) {
+      draft.css = value;
+      updateCodeDirtyState(section, baseline, draft);
+    });
+    section.appendChild(htmlEditor);
+    section.appendChild(cssEditor);
+
+    var toolbar = document.createElement("div");
+    toolbar.className = "code-editor-toolbar";
+    var applyButton = document.createElement("button");
+    applyButton.type = "button";
+    applyButton.className = "tool-button is-active";
+    applyButton.innerHTML = '<i class="bi bi-check2"></i>Apply Code';
+    applyButton.addEventListener("click", function () {
+      controller.actions.updateComponentData(component.id, function (node) {
+        if (!node.code || typeof node.code !== "object") {
+          node.code = { html: "", css: "" };
+        }
+        node.code.html = draft.html;
+        node.code.css = draft.css;
+      }, "Control code updated");
+    });
+    toolbar.appendChild(applyButton);
+
+    var resetButton = document.createElement("button");
+    resetButton.type = "button";
+    resetButton.className = "tool-button";
+    resetButton.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>Reset Code';
+    resetButton.addEventListener("click", function () {
+      draft.html = "";
+      draft.css = "";
+      setCodeFieldValue(htmlEditor, "");
+      setCodeFieldValue(cssEditor, "");
+      baseline.html = "";
+      baseline.css = "";
+      controller.actions.updateComponentData(component.id, function (node) {
+        if (!node.code || typeof node.code !== "object") {
+          node.code = { html: "", css: "" };
+        }
+        node.code.html = "";
+        node.code.css = "";
+      }, "Control code reset");
+    });
+    toolbar.appendChild(resetButton);
+
+    section.appendChild(toolbar);
+    updateCodeDirtyState(section, baseline, draft);
+    return section;
+  }
+
+  function updateCodeDirtyState(section, baseline, draft) {
+    var isDirty = String(draft.html || "") !== String(baseline.html || "") || String(draft.css || "") !== String(baseline.css || "");
+    section.classList.toggle("code-editor-dirty", isDirty);
+  }
+
+  function renderCodeField(labelText, language, value, onChange) {
+    var wrapper = document.createElement("div");
+    wrapper.className = "property-field code-editor-field";
+    wrapper.dataset.codeLanguage = language;
+
+    var label = document.createElement("label");
+    label.textContent = labelText;
+    wrapper.appendChild(label);
+
+    var input = document.createElement("pre");
+    input.className = "code-editor-input";
+    input.setAttribute("contenteditable", "true");
+    input.setAttribute("role", "textbox");
+    input.setAttribute("aria-multiline", "true");
+    input.setAttribute("spellcheck", "false");
+    input.dataset.codeField = language;
+    input.dataset.codeLanguage = language === "css" ? "css" : "xml";
+    wrapper.appendChild(input);
+
+    function refresh(nextValue) {
+      var caretOffset = getCaretCharacterOffset(input);
+      input.innerHTML = highlightSyntax(nextValue, language);
+      input.classList.add("hljs");
+      input.classList.add("language-" + (language === "css" ? "css" : "xml"));
+      setCaretCharacterOffset(input, caretOffset);
+      onChange(nextValue);
+    }
+
+    input.addEventListener("input", function () {
+      refresh(codeEditorValue(input));
+    });
+
+    refresh(String(value || ""));
+    return wrapper;
+  }
+
+  function setCodeFieldValue(wrapper, value) {
+    var input = wrapper.querySelector(".code-editor-input");
+    var language = wrapper.dataset.codeLanguage || "html";
+    if (!input) {
+      return;
+    }
+    input.innerHTML = highlightSyntax(value, language);
+    input.classList.add("hljs");
+    input.classList.add("language-" + (language === "css" ? "css" : "xml"));
+  }
+
+  function codeEditorValue(node) {
+    return String((node && node.textContent) || "").replace(/\u00a0/g, " ");
+  }
+
+  function getCaretCharacterOffset(node) {
+    var selection = window.getSelection ? window.getSelection() : null;
+    if (!selection || selection.rangeCount === 0) {
+      return 0;
+    }
+
+    var range = selection.getRangeAt(0);
+    if (!node.contains(range.startContainer)) {
+      return 0;
+    }
+
+    var preRange = range.cloneRange();
+    preRange.selectNodeContents(node);
+    preRange.setEnd(range.startContainer, range.startOffset);
+    return preRange.toString().length;
+  }
+
+  function setCaretCharacterOffset(node, offset) {
+    var selection = window.getSelection ? window.getSelection() : null;
+    if (!selection) {
+      return;
+    }
+
+    var range = document.createRange();
+    range.selectNodeContents(node);
+    range.collapse(true);
+
+    var remaining = Math.max(0, offset || 0);
+    var stack = [node];
+    var found = false;
+
+    while (stack.length && !found) {
+      var current = stack.shift();
+      if (current.nodeType === Node.TEXT_NODE) {
+        var length = current.textContent.length;
+        if (remaining <= length) {
+          range.setStart(current, remaining);
+          range.collapse(true);
+          found = true;
+          break;
+        }
+        remaining -= length;
+      } else {
+        for (var i = 0; i < current.childNodes.length; i += 1) {
+          stack.push(current.childNodes[i]);
+        }
+      }
+    }
+
+    if (!found) {
+      range.selectNodeContents(node);
+      range.collapse(false);
+    }
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  function focusComponentCodeEditor(controller, componentId, field) {
+    var targetField = field === "css" ? "css" : "html";
+    if (componentId && controller.state.selection.ids[0] !== componentId) {
+      controller.actions.selectOnly(componentId);
+    }
+
+    window.requestAnimationFrame(function () {
+      var input = controller.refs.inspectorRoot.querySelector('.code-editor-input[data-code-field="' + targetField + '"]');
+      if (!input) {
+        return;
+      }
+      input.focus();
+      setCaretCharacterOffset(input, codeEditorValue(input).length);
+    });
+  }
+
+  function highlightSyntax(source, language) {
+    var text = String(source || "");
+    var targetLanguage = language === "css" ? "css" : "xml";
+
+    if (window.hljs && typeof window.hljs.highlight === "function") {
+      try {
+        return window.hljs.highlight(text, { language: targetLanguage, ignoreIllegals: true }).value;
+      } catch (error) {
+        return utils.escapeHtml(text);
+      }
+    }
+
+    return utils.escapeHtml(text);
   }
 
   function renderField(controller, component, field) {
@@ -189,6 +444,18 @@
     if (field.type === "number") {
       return renderNumberField(field.label, utils.getByPath(component, field.path), field.min, field.max, function (value) {
         controller.actions.updateComponentField(component.id, field.path, value);
+      });
+    }
+
+    if (field.type === "color") {
+      return renderColorField(field.label, utils.getByPath(component, field.path), function (value) {
+        controller.actions.updateComponentField(component.id, field.path, value);
+      });
+    }
+
+    if (field.type === "image-upload") {
+      return renderImageUploadField(field.label, field.accept || "image/*", function (dataUrl) {
+        controller.actions.updateComponentField(component.id, "props.src", dataUrl);
       });
     }
 
@@ -296,6 +563,66 @@
     });
     wrapper.appendChild(input);
     return wrapper;
+  }
+
+  function renderColorField(labelText, value, onChange) {
+    var wrapper = document.createElement("div");
+    wrapper.className = "property-field";
+    var label = document.createElement("label");
+    label.textContent = labelText;
+    wrapper.appendChild(label);
+
+    var input = document.createElement("input");
+    input.type = "color";
+    input.className = "inspector-input color-input";
+    input.setAttribute("data-inspector-field", labelText);
+    input.value = normalizeColorValue(value);
+    input.addEventListener("change", function () {
+      onChange(input.value);
+    });
+    wrapper.appendChild(input);
+    return wrapper;
+  }
+
+  function renderImageUploadField(labelText, accept, onChange) {
+    var wrapper = document.createElement("div");
+    wrapper.className = "property-field";
+    var label = document.createElement("label");
+    label.textContent = labelText;
+    wrapper.appendChild(label);
+
+    var input = document.createElement("input");
+    input.type = "file";
+    input.accept = accept;
+    input.className = "inspector-input";
+    input.setAttribute("data-inspector-field", labelText);
+    input.addEventListener("change", function () {
+      var file = input.files && input.files[0];
+      if (!file) {
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function () {
+        onChange(String(reader.result || ""));
+      };
+      reader.readAsDataURL(file);
+      input.value = "";
+    });
+
+    wrapper.appendChild(input);
+    return wrapper;
+  }
+
+  function normalizeColorValue(value) {
+    var text = String(value || "").trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(text)) {
+      return text;
+    }
+    if (/^#[0-9a-fA-F]{3}$/.test(text)) {
+      return "#" + text.charAt(1) + text.charAt(1) + text.charAt(2) + text.charAt(2) + text.charAt(3) + text.charAt(3);
+    }
+    return "#d9e2f0";
   }
 
   function splitListValue(value, separator) {
@@ -599,6 +926,8 @@
   }
 
   MockApp.ui.inspector = {
-    renderInspector: renderInspector
+    renderInspector: renderInspector,
+    openComponentCodeEditor: openComponentCodeEditor,
+    focusComponentCodeEditor: focusComponentCodeEditor
   };
 })(window.MockApp);

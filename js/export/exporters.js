@@ -89,11 +89,16 @@
   function renderComponentHtml(component, isPreview, options) {
     var props = component.props || {};
     var renderOptions = options || {};
+    var rootStyle = renderOptions.isRootChild ? rootPlacementStyle(component.frame) : "";
+    var overrideHtml = renderCodeOverride(component, isPreview, renderOptions, rootStyle);
+    if (overrideHtml) {
+      return overrideHtml;
+    }
+
     var childrenHtml = (component.children || []).map(function (child) {
       return renderComponentHtml(child, isPreview, { isRootChild: false });
     }).join("\n");
     var classes = classListFromComponent(component);
-    var rootStyle = renderOptions.isRootChild ? rootPlacementStyle(component.frame) : "";
 
     switch (component.type) {
       case "layout.container":
@@ -108,9 +113,9 @@
         return '<button type="button" class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", false) + textStyle(renderOptions) + (props.disabled ? ' disabled="disabled"' : '') + '>' + textHtml(props.text || "", renderOptions) + '</button>';
       case "form.input":
         if (renderOptions.hideLabels) {
-          return '<div class="mb-3"' + rootStyle + inlineEditAttrs(renderOptions, "props.label", false) + '><input class="form-control" type="' + utils.escapeHtml(props.inputType || "text") + '" placeholder="' + utils.escapeHtml(props.placeholder || "") + '" value="' + utils.escapeHtml(props.value || "") + '"' + (props.required ? ' required="required"' : '') + ' /></div>';
+          return '<div class="mb-3"' + rootStyle + inlineEditAttrs(renderOptions, "props.label", false) + '><input class="form-control"' + inputAttributes(props) + ' /></div>';
         }
-        return '<div class="mb-3"' + rootStyle + '><label class="form-label">' + utils.escapeHtml(props.label || "") + '</label><input class="form-control" type="' + utils.escapeHtml(props.inputType || "text") + '" placeholder="' + utils.escapeHtml(props.placeholder || "") + '" value="' + utils.escapeHtml(props.value || "") + '"' + (props.required ? ' required="required"' : '') + ' /></div>';
+        return '<div class="mb-3"' + rootStyle + '><label class="form-label">' + utils.escapeHtml(props.label || "") + '</label><input class="form-control"' + inputAttributes(props) + ' /></div>';
       case "form.textarea":
         if (renderOptions.hideLabels) {
           return '<div class="mb-3"' + rootStyle + inlineEditAttrs(renderOptions, "props.label", false) + '><textarea class="form-control" rows="' + utils.escapeHtml(props.rows || 4) + '" placeholder="' + utils.escapeHtml(props.placeholder || "") + '"></textarea></div>';
@@ -140,15 +145,143 @@
         return '<div class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", true) + textStyle(renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</div>';
       case "content.badge":
         return '<span class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", false) + textStyle(renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</span>';
+      case "content.image":
+        if (props.src) {
+          return '<div class="mock-image"' + rootStyle + '><img class="mock-image-element" src="' + utils.escapeHtml(props.src) + '" alt="' + utils.escapeHtml(props.alt || "") + '" style="display:block;width:100%;height:100%;min-height:inherit;object-fit:' + utils.escapeHtml(props.fit || "cover") + ';background:' + utils.escapeHtml(props.placeholderColor || "#d9e2f0") + ';" /></div>';
+        }
+        return '<div class="mock-image"' + rootStyle + '><div class="mock-image-placeholder" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-height:110px;background:' + utils.escapeHtml(props.placeholderColor || "#d9e2f0") + ';border:1px dashed rgba(87, 106, 132, 0.36);color:#49566d;font-size:0.84rem;">' + utils.escapeHtml(props.placeholderText || "Image Placeholder") + '</div></div>';
+      case "content.figure":
+        return figureHtml(props, rootStyle);
       case "content.card":
         return '<div class="' + classes + '"' + rootStyle + '><div class="card-body"><h5 class="card-title"' + inlineEditAttrs(renderOptions, "props.title", false) + textStyle(renderOptions) + '>' + textHtml(props.title || "", renderOptions) + '</h5><p class="card-text"' + inlineEditAttrs(renderOptions, "props.text", true) + textStyle(renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</p>' + childrenHtml + '</div></div>';
       case "nav.navbar":
         return '<nav class="' + classes + '"' + rootStyle + '><div class="container-fluid"><span class="navbar-brand"' + inlineEditAttrs(renderOptions, "props.brand", false) + textStyle(renderOptions) + '>' + textHtml(props.brand || "", renderOptions) + '</span>' + navbarLinksHtml(props) + childrenHtml + '</div></nav>';
+      case "nav.breadcrumb":
+        return breadcrumbHtml(props, rootStyle);
+      case "nav.pagination":
+        return paginationHtml(props, rootStyle);
+      case "nav.tabs":
+        return tabsHtml(props, rootStyle, "tabs");
+      case "nav.pills":
+        return tabsHtml(props, rootStyle, "pills");
+      case "nav.dropdown":
+        return dropdownHtml(props, rootStyle, false);
+      case "nav.dropdown-button":
+        return dropdownHtml(props, rootStyle, true);
+      case "nav.offcanvas-navigation":
+        return offcanvasHtml(component, props, rootStyle);
+      case "content.list-group":
+        return listGroupHtml(props, rootStyle);
       case "data.table":
         return '<div class="table-responsive"' + rootStyle + '><table class="' + classes + '">' + tableHtml(props) + '</table></div>';
+      case "feedback.progress":
+        return progressHtml(props, rootStyle);
+      case "feedback.spinner":
+        return spinnerHtml(props, rootStyle);
+      case "feedback.toast":
+        return toastHtml(props, rootStyle);
+      case "feedback.placeholder":
+        return placeholderHtml(props, rootStyle);
+      case "interactive.accordion":
+        return accordionHtml(component, props, rootStyle);
+      case "interactive.collapse":
+        return collapseHtml(component, props, rootStyle);
+      case "interactive.carousel":
+        return carouselHtml(component, props, rootStyle);
+      case "interactive.tooltip":
+        return tooltipHtml(props, rootStyle);
+      case "interactive.popover":
+        return popoverHtml(props, rootStyle);
       default:
         return isPreview ? '<div class="preview-placeholder">Unsupported component</div>' : '<div class="preview-placeholder">Unsupported component</div>';
     }
+  }
+
+  function renderCodeOverride(component, isPreview, renderOptions, rootStyle) {
+    if (renderOptions.skipCodeOverride) {
+      return "";
+    }
+
+    var code = component.code || {};
+    var htmlText = String(code.html || "");
+    var cssText = String(code.css || "");
+    var hasHtml = htmlText.trim().length > 0;
+    var hasCss = cssText.trim().length > 0;
+    if (!hasHtml && !hasCss) {
+      return "";
+    }
+
+    try {
+      if (hasHtml) {
+        validateCustomHtml(htmlText);
+      }
+      if (hasCss) {
+        validateCustomCss(cssText);
+      }
+
+      var scopeValue = String(component.id || "component");
+      var escapedScopeValue = utils.escapeHtml(scopeValue);
+      var scopeSelector = '[data-mockapp-code-scope="' + cssStringEscape(scopeValue) + '"]';
+      var styleBlock = hasCss ? '<style>' + safeStyleText(scopeCss(cssText, scopeSelector)) + '</style>' : "";
+      var bodyHtml = hasHtml ? htmlText : renderComponentHtml(component, isPreview, {
+        isRootChild: false,
+        hideLabels: renderOptions.hideLabels,
+        preserveLineBreaks: renderOptions.preserveLineBreaks,
+        inlineEditing: false,
+        skipCodeOverride: true
+      });
+      return '<div class="mockapp-custom-control" data-mockapp-code-scope="' + escapedScopeValue + '"' + rootStyle + '>' + styleBlock + bodyHtml + '</div>';
+    } catch (error) {
+      return renderComponentErrorHtml(rootStyle, error && error.message ? error.message : "Invalid HTML/CSS override.");
+    }
+  }
+
+  function validateCustomHtml(htmlText) {
+    if (/<\s*script\b/i.test(htmlText)) {
+      throw new Error("Script tags are not supported in control HTML.");
+    }
+  }
+
+  function validateCustomCss(cssText) {
+    if (!cssText.trim()) {
+      return;
+    }
+
+    if (typeof window.CSSStyleSheet === "function") {
+      var testSheet = new window.CSSStyleSheet();
+      testSheet.replaceSync(cssText);
+    }
+  }
+
+  function scopeCss(cssText, scopeSelector) {
+    return String(cssText || "").replace(/(^|})\s*([^@{}][^{]*)\{/g, function (_, boundary, selectors) {
+      var scopedSelectors = selectors.split(",").map(function (selector) {
+        var trimmed = selector.trim();
+        if (!trimmed) {
+          return "";
+        }
+        if (trimmed.indexOf(scopeSelector) === 0) {
+          return trimmed;
+        }
+        if (trimmed === "body" || trimmed === "html" || trimmed === ":root") {
+          return scopeSelector;
+        }
+        return scopeSelector + " " + trimmed;
+      }).filter(Boolean).join(", ");
+      return boundary + " " + scopedSelectors + " {";
+    });
+  }
+
+  function cssStringEscape(value) {
+    return String(value || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  }
+
+  function safeStyleText(cssText) {
+    return String(cssText || "").replace(/<\s*\/\s*style/gi, "<\\/style");
+  }
+
+  function renderComponentErrorHtml(rootStyle, message) {
+    return '<div class="preview-placeholder mockapp-render-error"' + rootStyle + '><strong>Render error</strong><div>' + utils.escapeHtml(message || "Invalid control HTML/CSS.") + '</div></div>';
   }
 
   function rootPlacementStyle(frame) {
@@ -188,6 +321,23 @@
     }).join("");
   }
 
+  function inputAttributes(props) {
+    var inputType = String(props.inputType || "text");
+    var attributes = ' type="' + utils.escapeHtml(inputType) + '"';
+
+    if (inputType !== "file" && props.placeholder) {
+      attributes += ' placeholder="' + utils.escapeHtml(props.placeholder) + '"';
+    }
+    if (inputType !== "file" && props.value) {
+      attributes += ' value="' + utils.escapeHtml(props.value) + '"';
+    }
+    if (props.required) {
+      attributes += ' required="required"';
+    }
+
+    return attributes;
+  }
+
   function navbarLinksHtml(props) {
     var links = splitLines(props.linksText || "");
     if (!links.length) {
@@ -197,6 +347,186 @@
     return '<ul class="navbar-nav ms-auto">' + links.map(function (link, index) {
       return '<li class="nav-item"><span class="nav-link' + (index === 0 ? ' active' : '') + '">' + utils.escapeHtml(link) + '</span></li>';
     }).join("") + '</ul>';
+  }
+
+  function breadcrumbHtml(props, rootStyle) {
+    var items = splitLines(props.itemsText || "");
+    if (!items.length) {
+      items = ["Home", "Page"];
+    }
+
+    return '<nav aria-label="breadcrumb"' + rootStyle + '><ol class="breadcrumb mb-0">' + items.map(function (item, index) {
+      var isLast = index === items.length - 1;
+      if (isLast) {
+        return '<li class="breadcrumb-item active" aria-current="page">' + utils.escapeHtml(item) + '</li>';
+      }
+      return '<li class="breadcrumb-item"><a href="#" onclick="return false;">' + utils.escapeHtml(item) + '</a></li>';
+    }).join("") + '</ol></nav>';
+  }
+
+  function paginationHtml(props, rootStyle) {
+    var items = splitLines(props.itemsText || "");
+    if (!items.length) {
+      items = ["Previous", "1", "2", "3", "Next"];
+    }
+
+    var sizeClass = props.size === "sm" ? " pagination-sm" : (props.size === "lg" ? " pagination-lg" : "");
+    var alignClass = props.align === "center" ? " justify-content-center" : (props.align === "end" ? " justify-content-end" : " justify-content-start");
+    var activeIndex = Math.max(1, Number(props.activeIndex) || 1);
+
+    return '<nav aria-label="Pagination"' + rootStyle + '><ul class="pagination mb-0' + sizeClass + alignClass + '">' + items.map(function (item, index) {
+      var isActive = index + 1 === activeIndex;
+      return '<li class="page-item' + (isActive ? ' active' : '') + '"><a class="page-link" href="#" onclick="return false;">' + utils.escapeHtml(item) + '</a></li>';
+    }).join("") + '</ul></nav>';
+  }
+
+  function progressHtml(props, rootStyle) {
+    var value = Math.max(0, Math.min(100, Number(props.value) || 0));
+    var barClass = 'progress-bar bg-' + utils.escapeHtml(props.variant || "primary") + (props.striped ? ' progress-bar-striped' : '') + (props.animated ? ' progress-bar-animated' : '');
+    var label = props.showLabel ? utils.escapeHtml(props.label || (String(value) + "%")) : "";
+    return '<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + value + '"' + rootStyle + '><div class="' + barClass + '" style="width:' + value + '%">' + label + '</div></div>';
+  }
+
+  function spinnerHtml(props, rootStyle) {
+    var typeClass = props.spinnerType === "grow" ? "spinner-grow" : "spinner-border";
+    var sizeClass = props.size === "sm" ? " " + typeClass + "-sm" : "";
+    var largeStyle = props.size === "lg" ? ' style="width:2.5rem;height:2.5rem;"' : "";
+    var colorClass = ' text-' + utils.escapeHtml(props.variant || "primary");
+    var label = utils.escapeHtml(props.label || "Loading...");
+    var visibleLabel = props.showLabel ? '<span class="ms-2">' + label + '</span>' : "";
+    return '<div class="d-inline-flex align-items-center"' + rootStyle + '><div class="' + typeClass + sizeClass + colorClass + '" role="status"' + largeStyle + '><span class="visually-hidden">' + label + '</span></div>' + visibleLabel + '</div>';
+  }
+
+  function figureHtml(props, rootStyle) {
+    var imageInner = "";
+    if (props.src) {
+      imageInner = '<img class="mock-figure-image" src="' + utils.escapeHtml(props.src) + '" alt="' + utils.escapeHtml(props.alt || "") + '" style="display:block;width:100%;height:100%;min-height:inherit;object-fit:' + utils.escapeHtml(props.fit || "cover") + ';background:' + utils.escapeHtml(props.placeholderColor || "#d9e2f0") + ';" />';
+    } else {
+      imageInner = '<div class="mock-figure-placeholder" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-height:120px;background:' + utils.escapeHtml(props.placeholderColor || "#d9e2f0") + ';border:1px dashed rgba(87, 106, 132, 0.36);color:#49566d;font-size:0.84rem;">' + utils.escapeHtml(props.placeholderText || "Figure Placeholder") + '</div>';
+    }
+    return '<figure class="mock-figure mb-0"' + rootStyle + '>' + imageInner + '<figcaption class="figure-caption mt-2">' + utils.escapeHtml(props.caption || "") + '</figcaption></figure>';
+  }
+
+  function tabsHtml(props, rootStyle, mode) {
+    var items = splitLines(props.itemsText || "");
+    if (!items.length) {
+      items = ["First", "Second", "Third"];
+    }
+
+    var navClass = mode === "pills" ? "nav nav-pills" : "nav nav-tabs";
+    if (props.fill) {
+      navClass += " nav-fill";
+    }
+    if (props.justified) {
+      navClass += " nav-justified";
+    }
+
+    var activeIndex = Math.max(1, Number(props.activeIndex) || 1);
+    return '<ul class="' + navClass + '"' + rootStyle + '>' + items.map(function (item, index) {
+      var isActive = index + 1 === activeIndex;
+      return '<li class="nav-item"><a class="nav-link' + (isActive ? ' active' : '') + '" href="#" onclick="return false;">' + utils.escapeHtml(item) + '</a></li>';
+    }).join("") + '</ul>';
+  }
+
+  function dropdownHtml(props, rootStyle, split) {
+    var items = splitLines(props.itemsText || "");
+    if (!items.length) {
+      items = ["Action", "Another action", "Something else"];
+    }
+
+    var variant = utils.escapeHtml(props.variant || "secondary");
+    if (!split) {
+      return '<div class="dropdown"' + rootStyle + '><button class="btn btn-' + variant + ' dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">' + utils.escapeHtml(props.label || "Dropdown") + '</button><ul class="dropdown-menu">' + dropdownItemsHtml(items) + '</ul></div>';
+    }
+
+    return '<div class="btn-group"' + rootStyle + '><button type="button" class="btn btn-' + variant + '">' + utils.escapeHtml(props.label || "Actions") + '</button><button type="button" class="btn btn-' + variant + ' dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false"><span class="visually-hidden">Toggle Dropdown</span></button><ul class="dropdown-menu">' + dropdownItemsHtml(items) + '</ul></div>';
+  }
+
+  function dropdownItemsHtml(items) {
+    return items.map(function (item) {
+      return '<li><a class="dropdown-item" href="#" onclick="return false;">' + utils.escapeHtml(item) + '</a></li>';
+    }).join("");
+  }
+
+  function offcanvasHtml(component, props, rootStyle) {
+    var offcanvasId = "offcanvas-" + utils.escapeHtml(component.id || "panel");
+    var items = splitLines(props.itemsText || "");
+    if (!items.length) {
+      items = ["Dashboard", "Projects", "Settings"];
+    }
+
+    return '<div' + rootStyle + '><button class="btn btn-outline-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#' + offcanvasId + '" aria-controls="' + offcanvasId + '">' + utils.escapeHtml(props.buttonText || "Open Menu") + '</button><div class="offcanvas offcanvas-' + utils.escapeHtml(props.placement || "start") + '" tabindex="-1" id="' + offcanvasId + '" aria-labelledby="' + offcanvasId + '-label"><div class="offcanvas-header"><h5 class="offcanvas-title" id="' + offcanvasId + '-label">' + utils.escapeHtml(props.title || "Menu") + '</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div><div class="offcanvas-body"><div class="list-group">' + items.map(function (item, index) {
+      return '<a href="#" onclick="return false;" class="list-group-item list-group-item-action' + (index === 0 ? ' active' : '') + '">' + utils.escapeHtml(item) + '</a>';
+    }).join("") + '</div></div></div></div>';
+  }
+
+  function listGroupHtml(props, rootStyle) {
+    var items = splitLines(props.itemsText || "");
+    if (!items.length) {
+      items = ["First item", "Second item", "Third item"];
+    }
+    var activeIndex = Math.max(1, Number(props.activeIndex) || 1);
+    var listTag = props.numbered ? "ol" : "ul";
+    var classes = "list-group" + (props.flush ? " list-group-flush" : "");
+    return '<' + listTag + ' class="' + classes + '"' + rootStyle + '>' + items.map(function (item, index) {
+      return '<li class="list-group-item' + (index + 1 === activeIndex ? ' active' : '') + '">' + utils.escapeHtml(item) + '</li>';
+    }).join("") + '</' + listTag + '>';
+  }
+
+  function toastHtml(props, rootStyle) {
+    return '<div class="toast show" role="alert" aria-live="assertive" aria-atomic="true"' + rootStyle + '><div class="toast-header"><strong class="me-auto">' + utils.escapeHtml(props.title || "Notification") + '</strong><small>' + utils.escapeHtml(props.timestamp || "just now") + '</small><button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button></div><div class="toast-body">' + utils.escapeHtml(props.message || "Task completed successfully.") + '</div></div>';
+  }
+
+  function placeholderHtml(props, rootStyle) {
+    var rows = Math.max(1, Math.min(8, Number(props.rows) || 3));
+    var wrapperClass = props.animated ? "placeholder-glow" : "";
+    var widths = [100, 92, 84, 76, 68, 60, 52, 44];
+    var lines = [];
+    for (var i = 0; i < rows; i += 1) {
+      lines.push('<span class="placeholder col-' + Math.max(2, Math.round(widths[i % widths.length] / 8)) + '"></span>');
+    }
+    return '<p class="' + wrapperClass + ' mb-0"' + rootStyle + '>' + lines.join("") + '</p>';
+  }
+
+  function accordionHtml(component, props, rootStyle) {
+    var headers = splitLines(props.headersText || "");
+    var bodies = splitLines(props.bodiesText || "");
+    if (!headers.length) {
+      headers = ["Section One", "Section Two"];
+    }
+    var accordionId = "accordion-" + utils.escapeHtml(component.id || "group");
+    var classes = "accordion" + (props.flush ? " accordion-flush" : "");
+    return '<div class="' + classes + '" id="' + accordionId + '"' + rootStyle + '>' + headers.map(function (header, index) {
+      var itemId = accordionId + "-item-" + index;
+      var collapseId = itemId + "-collapse";
+      return '<div class="accordion-item"><h2 class="accordion-header" id="' + itemId + '-header"><button class="accordion-button' + (index ? ' collapsed' : '') + '" type="button" data-bs-toggle="collapse" data-bs-target="#' + collapseId + '" aria-expanded="' + (index === 0 ? "true" : "false") + '" aria-controls="' + collapseId + '">' + utils.escapeHtml(header) + '</button></h2><div id="' + collapseId + '" class="accordion-collapse collapse' + (index === 0 ? ' show' : '') + '" data-bs-parent="#' + accordionId + '"><div class="accordion-body">' + utils.escapeHtml(bodies[index] || "Content") + '</div></div></div>';
+    }).join("") + '</div>';
+  }
+
+  function collapseHtml(component, props, rootStyle) {
+    var collapseId = "collapse-" + utils.escapeHtml(component.id || "panel");
+    return '<div' + rootStyle + '><p><button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#' + collapseId + '" aria-expanded="' + (props.shown ? "true" : "false") + '" aria-controls="' + collapseId + '">' + utils.escapeHtml(props.buttonText || "Toggle details") + '</button></p><div class="collapse' + (props.shown ? ' show' : '') + '" id="' + collapseId + '"><div class="card card-body">' + utils.escapeHtml(props.content || "Hidden content") + '</div></div></div>';
+  }
+
+  function carouselHtml(component, props, rootStyle) {
+    var slides = splitLines(props.slidesText || "");
+    if (!slides.length) {
+      slides = ["Slide One", "Slide Two", "Slide Three"];
+    }
+    var carouselId = "carousel-" + utils.escapeHtml(component.id || "deck");
+    return '<div id="' + carouselId + '" class="carousel slide' + (props.dark ? ' carousel-dark' : '') + '" data-bs-ride="' + (props.autoPlay ? "carousel" : "false") + '"' + rootStyle + '><div class="carousel-indicators">' + slides.map(function (_, index) {
+      return '<button type="button" data-bs-target="#' + carouselId + '" data-bs-slide-to="' + index + '"' + (index === 0 ? ' class="active" aria-current="true"' : "") + ' aria-label="Slide ' + (index + 1) + '"></button>';
+    }).join("") + '</div><div class="carousel-inner">' + slides.map(function (slide, index) {
+      return '<div class="carousel-item' + (index === 0 ? ' active' : '') + '"><div style="height:180px;display:flex;align-items:center;justify-content:center;background:' + (index % 2 ? '#e9ecef' : '#f8f9fa') + ';">' + utils.escapeHtml(slide) + '</div></div>';
+    }).join("") + '</div><button class="carousel-control-prev" type="button" data-bs-target="#' + carouselId + '" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span></button><button class="carousel-control-next" type="button" data-bs-target="#' + carouselId + '" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span></button></div>';
+  }
+
+  function tooltipHtml(props, rootStyle) {
+    return '<button type="button" class="btn btn-outline-secondary" data-bs-toggle="tooltip" data-bs-placement="' + utils.escapeHtml(props.placement || "top") + '" title="' + utils.escapeHtml(props.title || "Tooltip text") + '"' + rootStyle + '>' + utils.escapeHtml(props.buttonText || "Hover me") + '</button>';
+  }
+
+  function popoverHtml(props, rootStyle) {
+    return '<button type="button" class="btn btn-outline-secondary" data-bs-toggle="popover" data-bs-placement="' + utils.escapeHtml(props.placement || "right") + '" title="' + utils.escapeHtml(props.title || "Popover title") + '" data-bs-content="' + utils.escapeHtml(props.content || "Popover body content.") + '"' + rootStyle + '>' + utils.escapeHtml(props.buttonText || "Show popover") + '</button>';
   }
 
   function tableHtml(props) {

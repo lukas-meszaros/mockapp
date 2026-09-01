@@ -432,6 +432,12 @@
       }, "Page renamed", true);
     };
 
+    controller.actions.renamePreviewSurface = function (title) {
+      commitProjectChange(controller, function (project) {
+        projectData.getActivePage(project).previewSurfaceTitle = title || "Responsive Bootstrap preview surface";
+      }, "Preview surface renamed", true);
+    };
+
     controller.actions.updateProjectName = function (name) {
       commitProjectChange(controller, function (project) {
         project.metadata.name = name || "MockApp Project";
@@ -587,10 +593,10 @@
         return;
       }
 
-      if (controller.state.ui.paletteCollapsed[groupName]) {
-        delete controller.state.ui.paletteCollapsed[groupName];
-      } else {
+      if (controller.state.ui.paletteCollapsed[groupName] === false) {
         controller.state.ui.paletteCollapsed[groupName] = true;
+      } else {
+        controller.state.ui.paletteCollapsed[groupName] = false;
       }
 
       persistUiPreferences(controller);

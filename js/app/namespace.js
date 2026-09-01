@@ -1,0 +1,9 @@
+window.MockApp = window.MockApp || {};
+window.MockApp.app = window.MockApp.app || {};
+window.MockApp.ui = window.MockApp.ui || {};
+window.MockApp.data = window.MockApp.data || {};
+window.MockApp.components = window.MockApp.components || {};
+window.MockApp.history = window.MockApp.history || {};
+window.MockApp.persistence = window.MockApp.persistence || {};
+window.MockApp.exporters = window.MockApp.exporters || {};
+window.MockApp.utils = window.MockApp.utils || {};

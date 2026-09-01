@@ -4,66 +4,216 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MockApp</title>
+    <link rel="stylesheet" href="./vendor/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="./vendor/bootstrap-icons/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="./css/mockapp.css" />
   </head>
   <body>
     <div class="app-shell">
-      <header class="toolbar">
-        <div class="toolbar-group">
-          <strong>MockApp</strong>
-          <button type="button" data-action="new-project">New</button>
-          <button type="button" data-action="save-project">Save JSON</button>
-          <button type="button" data-action="open-project">Open JSON</button>
-          <button type="button" data-action="export-html">Export HTML</button>
-        </div>
-        <div class="toolbar-group">
-          <label for="viewport-select">Viewport</label>
-          <select id="viewport-select">
-            <option value="desktop">Desktop</option>
-            <option value="tablet">Tablet</option>
-            <option value="phone">Phone</option>
-          </select>
+      <header class="topbar">
+        <div class="menubar">
+          <div class="menu-list">
+            <div class="brand">
+              <span class="brand-mark"><i class="bi bi-grid-3x3-gap-fill"></i></span>
+              <span>MockApp</span>
+            </div>
+            <div class="dropdown topbar-dropdown">
+              <button type="button" class="menu-button dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">File</button>
+              <div class="dropdown-menu topbar-dropdown-menu">
+                <button type="button" class="dropdown-item" data-action="new-project"><i class="bi bi-file-earmark-plus"></i>New</button>
+                <button type="button" class="dropdown-item" data-action="open-project"><i class="bi bi-folder2-open"></i>Open</button>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="dropdown-item" data-action="save-project"><i class="bi bi-floppy"></i>Save</button>
+                <button type="button" class="dropdown-item" data-action="save-project-as"><i class="bi bi-download"></i>Save As</button>
+              </div>
+            </div>
+            <div class="dropdown topbar-dropdown">
+              <button type="button" class="menu-button dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Edit</button>
+              <div class="dropdown-menu topbar-dropdown-menu">
+                <button type="button" class="dropdown-item" data-action="undo"><i class="bi bi-arrow-counterclockwise"></i>Undo</button>
+                <button type="button" class="dropdown-item" data-action="redo"><i class="bi bi-arrow-clockwise"></i>Redo</button>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="dropdown-item" data-action="duplicate"><i class="bi bi-copy"></i>Duplicate</button>
+                <button type="button" class="dropdown-item" data-action="delete"><i class="bi bi-trash"></i>Delete</button>
+              </div>
+            </div>
+            <div class="dropdown topbar-dropdown">
+              <button type="button" class="menu-button dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">View</button>
+              <div class="dropdown-menu topbar-dropdown-menu">
+                <button type="button" class="dropdown-item" data-action="preview"><i class="bi bi-play-circle"></i>Preview</button>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="dropdown-item" data-action="zoom-out"><i class="bi bi-zoom-out"></i>Zoom Out</button>
+                <button type="button" class="dropdown-item" data-action="zoom-reset"><i class="bi bi-aspect-ratio"></i>Reset Zoom</button>
+                <button type="button" class="dropdown-item" data-action="zoom-in"><i class="bi bi-zoom-in"></i>Zoom In</button>
+              </div>
+            </div>
+            <div class="dropdown topbar-dropdown">
+              <button type="button" class="menu-button dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Insert</button>
+              <div class="dropdown-menu topbar-dropdown-menu">
+                <button type="button" class="dropdown-item" data-action="add-page"><i class="bi bi-plus-square"></i>Add Page</button>
+                <button type="button" class="dropdown-item" data-action="duplicate-page"><i class="bi bi-files"></i>Duplicate Page</button>
+              </div>
+            </div>
+            <div class="dropdown topbar-dropdown">
+              <button type="button" class="menu-button dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Arrange</button>
+              <div class="dropdown-menu topbar-dropdown-menu">
+                <button type="button" class="dropdown-item" data-action="duplicate"><i class="bi bi-copy"></i>Duplicate Selection</button>
+                <button type="button" class="dropdown-item" data-action="delete"><i class="bi bi-trash"></i>Delete Selection</button>
+              </div>
+            </div>
+            <div class="dropdown topbar-dropdown">
+              <button type="button" class="menu-button dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Export</button>
+              <div class="dropdown-menu topbar-dropdown-menu">
+                <button type="button" class="dropdown-item" data-action="copy-json"><i class="bi bi-clipboard"></i>Copy JSON</button>
+                <div class="dropdown-divider"></div>
+                <button type="button" class="dropdown-item" data-action="export-html"><i class="bi bi-code-slash"></i>Export HTML</button>
+                <button type="button" class="dropdown-item" data-action="export-png"><i class="bi bi-filetype-png"></i>Export PNG</button>
+                <button type="button" class="dropdown-item" data-action="export-svg"><i class="bi bi-badge-sd"></i>Export SVG</button>
+              </div>
+            </div>
+            <div class="dropdown topbar-dropdown">
+              <button type="button" class="menu-button dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Help</button>
+              <div class="dropdown-menu topbar-dropdown-menu">
+                <button type="button" class="dropdown-item" data-action="show-about"><i class="bi bi-info-circle"></i>About MockApp</button>
+              </div>
+            </div>
+          </div>
+          <div class="toolbar-group">
+            <button type="button" class="pill-button" data-action="preview"><i class="bi bi-play-circle"></i>Preview</button>
+          </div>
         </div>
       </header>
 
       <main class="workspace">
-        <aside class="panel components-panel">
+        <aside class="panel panel-left">
           <div class="panel-header">
-            <h1>Components</h1>
-            <input id="component-search" type="search" placeholder="Search..." />
+            <div class="panel-title-row">
+              <h1 class="panel-title">Library</h1>
+              <span class="panel-subtitle">Bootstrap-first</span>
+            </div>
+            <div class="search-row">
+              <label class="sr-only" for="component-search">Search components</label>
+              <input id="component-search" type="search" placeholder="Search components, tags, categories" />
+            </div>
           </div>
-          <div id="component-palette" class="component-palette"></div>
+          <div class="tab-row">
+            <button type="button" class="tab-button is-active" data-tab-target="palette">Components</button>
+            <button type="button" class="tab-button" data-tab-target="pages">Pages</button>
+            <button type="button" class="tab-button" data-tab-target="layers">Layers</button>
+          </div>
+          <div class="panel-content">
+            <section data-tab-panel="palette">
+              <div id="component-palette" class="panel-section"></div>
+            </section>
+            <section data-tab-panel="pages" hidden>
+              <div class="page-panel">
+                <div class="page-toolbar">
+                  <button type="button" class="tool-button" data-action="add-page"><i class="bi bi-plus-square"></i>Add Page</button>
+                  <button type="button" class="tool-button" data-action="duplicate-page"><i class="bi bi-files"></i>Duplicate</button>
+                  <button type="button" class="tool-button" data-action="delete-page"><i class="bi bi-trash"></i>Delete</button>
+                </div>
+                <div id="page-list" class="page-list"></div>
+              </div>
+            </section>
+            <section data-tab-panel="layers" hidden>
+              <div id="layer-tree" class="layer-panel"></div>
+            </section>
+          </div>
         </aside>
 
+        <div class="splitter splitter-left" data-side="left"></div>
+
         <section class="canvas-panel">
-          <div class="canvas-toolbar">
-            <span>Canvas</span>
-            <span id="page-name">Page 1</span>
+          <div class="canvas-topbar">
+            <div>
+              <strong>Canvas</strong>
+              <div class="panel-subtitle" id="page-title">Page 1</div>
+            </div>
+            <div class="toolbar-group">
+              <button type="button" class="segmented-button" data-action="zoom-out"><i class="bi bi-zoom-out"></i></button>
+              <button type="button" class="segmented-button" data-action="zoom-reset" id="zoom-label">100%</button>
+              <button type="button" class="segmented-button" data-action="zoom-in"><i class="bi bi-zoom-in"></i></button>
+            </div>
+          </div>
+          <div class="canvas-subbar">
+            <div class="toolbar-group">
+              <label for="viewport-select">Viewport</label>
+              <select id="viewport-select" class="inspector-select">
+                <option value="mobile">Mobile</option>
+                <option value="mobile-landscape">Mobile Landscape</option>
+                <option value="tablet">Tablet</option>
+                <option value="laptop">Laptop</option>
+                <option value="desktop" selected>Desktop</option>
+                <option value="wide">Large Desktop</option>
+              </select>
+            </div>
+            <div class="toolbar-group muted">
+              <span>Flow layout mode</span>
+              <span>Nested Bootstrap structures</span>
+            </div>
           </div>
           <div id="canvas-stage" class="canvas-stage viewport-desktop">
-            <div id="canvas-surface" class="canvas-surface" aria-label="Mockup canvas"></div>
+            <div id="canvas-viewport" class="canvas-viewport">
+              <div class="viewport-frame">
+                <div class="viewport-ruler">Responsive Bootstrap preview surface</div>
+                <div id="canvas-root" class="canvas-root" aria-label="Mockup canvas"></div>
+              </div>
+            </div>
           </div>
         </section>
 
-        <aside class="panel properties-panel">
+        <div class="splitter splitter-right" data-side="right"></div>
+
+        <aside class="panel panel-right">
           <div class="panel-header">
-            <h1>Properties</h1>
+            <div class="panel-title-row">
+              <h1 class="panel-title">Properties</h1>
+              <span class="panel-subtitle">Structured editing</span>
+            </div>
           </div>
-          <div id="property-inspector" class="property-inspector">
-            <p class="muted">Select a component to edit its properties.</p>
-          </div>
+          <div id="property-inspector" class="panel-content property-inspector"></div>
         </aside>
       </main>
 
       <footer class="status-bar">
-        <span id="status-viewport">Viewport: desktop</span>
-        <span id="status-selection">Selection: none</span>
-        <span id="status-count">Components: 0</span>
-        <span id="status-save">Autosave: ready</span>
+        <div class="status-group">
+          <span id="status-project" class="status-pill">Project: MockApp Project</span>
+          <span id="status-viewport" class="status-pill">Viewport: Desktop 1440x900</span>
+          <span id="status-selection" class="status-pill">Selection: None</span>
+        </div>
+        <div class="status-group">
+          <span id="status-count" class="status-pill">Components: 0</span>
+          <span id="status-save" class="status-pill">Autosave: ready</span>
+        </div>
       </footer>
     </div>
 
     <input id="project-file-input" type="file" accept="application/json" hidden />
+    <dialog id="app-dialog" class="mockapp-dialog">
+      <div class="dialog-header"><strong id="dialog-title">Notice</strong></div>
+      <div id="dialog-body" class="dialog-body"></div>
+      <div class="dialog-footer">
+        <button type="button" id="dialog-cancel" class="tool-button">Cancel</button>
+        <button type="button" id="dialog-confirm" class="tool-button is-active">OK</button>
+      </div>
+    </dialog>
+    <div id="toast-region" class="toast-region" aria-live="polite"></div>
+
+    <script src="./vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="./vendor/html2canvas/html2canvas.min.js"></script>
+    <script src="./js/app/namespace.js"></script>
+    <script src="./js/app/constants.js"></script>
+    <script src="./js/app/utils.js"></script>
+    <script src="./js/components/registry.js"></script>
+    <script src="./js/data/project.js"></script>
+    <script src="./js/history/history.js"></script>
+    <script src="./js/persistence/persistence.js"></script>
+    <script src="./js/export/exporters.js"></script>
+    <script src="./js/ui/shell.js"></script>
+    <script src="./js/ui/sidebar.js"></script>
+    <script src="./js/ui/inspector.js"></script>
+    <script src="./js/ui/canvas.js"></script>
+    <script src="./js/app/controller.js"></script>
     <script src="./js/app/app.js"></script>
   </body>
 </html>

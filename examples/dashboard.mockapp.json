@@ -1,0 +1,81 @@
+{
+  "format": "MockApp",
+  "version": 1,
+  "metadata": {
+    "name": "Dashboard Example",
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "updatedAt": "2026-09-01T00:00:00.000Z",
+    "appVersion": "0.2.0",
+    "bootstrapVersion": "5.3.8",
+    "bootstrapIconsVersion": "1.13.1"
+  },
+  "settings": {
+    "grid": { "visible": true, "snap": true, "size": 8 },
+    "showGuides": true,
+    "autosaveIntervalMs": 1500
+  },
+  "pages": [
+    {
+      "id": "page-dashboard",
+      "name": "Dashboard",
+      "viewportPreset": "desktop",
+      "root": {
+        "id": "root-dashboard",
+        "type": "page-root",
+        "name": "Canvas Root",
+        "props": {},
+        "meta": { "locked": false, "hidden": false },
+        "children": [
+          {
+            "id": "cmp-navbar-dashboard",
+            "type": "nav.navbar",
+            "name": "Navbar",
+            "props": { "brand": "Customer Portal", "theme": "dark", "background": "dark" },
+            "meta": { "locked": false, "hidden": false },
+            "children": []
+          },
+          {
+            "id": "cmp-container-dashboard",
+            "type": "layout.container",
+            "name": "Container",
+            "props": { "fluid": false, "padding": "3", "gap": "3" },
+            "meta": { "locked": false, "hidden": false },
+            "children": [
+              {
+                "id": "cmp-row-dashboard",
+                "type": "layout.row",
+                "name": "Row",
+                "props": { "gap": "3", "alignItems": "stretch" },
+                "meta": { "locked": false, "hidden": false },
+                "children": [
+                  {
+                    "id": "cmp-col-left-dashboard",
+                    "type": "layout.column",
+                    "name": "Metrics",
+                    "props": { "gap": "3", "widths": { "xs": "12", "sm": "12", "md": "4", "lg": "4", "xl": "3", "xxl": "3" } },
+                    "meta": { "locked": false, "hidden": false },
+                    "children": [
+                      { "id": "cmp-card-revenue", "type": "content.card", "name": "Revenue Card", "props": { "title": "Revenue", "text": "$128,400 this month", "shadow": "regular" }, "meta": { "locked": false, "hidden": false }, "children": [] },
+                      { "id": "cmp-badge-growth", "type": "content.badge", "name": "Badge", "props": { "text": "+12%", "variant": "success", "pill": true }, "meta": { "locked": false, "hidden": false }, "children": [] }
+                    ]
+                  },
+                  {
+                    "id": "cmp-col-right-dashboard",
+                    "type": "layout.column",
+                    "name": "Data",
+                    "props": { "gap": "3", "widths": { "xs": "12", "sm": "12", "md": "8", "lg": "8", "xl": "9", "xxl": "9" } },
+                    "meta": { "locked": false, "hidden": false },
+                    "children": [
+                      { "id": "cmp-table-dashboard", "type": "data.table", "name": "Users Table", "props": { "columnsText": "Name, Role, Status", "rowsText": "Avery, Admin, Active\nRiley, Editor, Pending\nJordan, Viewer, Disabled", "striped": true, "hover": true }, "meta": { "locked": false, "hidden": false }, "children": [] }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "activePageId": "page-dashboard"
+}

@@ -1,0 +1,50 @@
+{
+  "format": "MockApp",
+  "version": 1,
+  "metadata": {
+    "name": "Form Example",
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "updatedAt": "2026-09-01T00:00:00.000Z",
+    "appVersion": "0.2.0",
+    "bootstrapVersion": "5.3.8",
+    "bootstrapIconsVersion": "1.13.1"
+  },
+  "settings": {
+    "grid": { "visible": true, "snap": true, "size": 8 },
+    "showGuides": true,
+    "autosaveIntervalMs": 1500
+  },
+  "pages": [
+    {
+      "id": "page-form",
+      "name": "Contact Form",
+      "viewportPreset": "tablet",
+      "root": {
+        "id": "root-form",
+        "type": "page-root",
+        "name": "Canvas Root",
+        "props": {},
+        "meta": { "locked": false, "hidden": false },
+        "children": [
+          {
+            "id": "cmp-container-form",
+            "type": "layout.container",
+            "name": "Form Container",
+            "props": { "fluid": false, "padding": "3", "gap": "3" },
+            "meta": { "locked": false, "hidden": false },
+            "children": [
+              { "id": "cmp-heading-form", "type": "content.heading", "name": "Heading", "props": { "text": "Contact Us", "level": "2", "marginBottom": "3" }, "meta": { "locked": false, "hidden": false }, "children": [] },
+              { "id": "cmp-paragraph-form", "type": "content.paragraph", "name": "Paragraph", "props": { "text": "Send us a message and the team will reply within one business day.", "lead": true, "align": "start" }, "meta": { "locked": false, "hidden": false }, "children": [] },
+              { "id": "cmp-input-form-name", "type": "form.input", "name": "Name", "props": { "label": "Full Name", "placeholder": "Ada Lovelace", "value": "", "inputType": "text", "required": true }, "meta": { "locked": false, "hidden": false }, "children": [] },
+              { "id": "cmp-input-form-email", "type": "form.input", "name": "Email", "props": { "label": "Email", "placeholder": "ada@example.com", "value": "", "inputType": "email", "required": true }, "meta": { "locked": false, "hidden": false }, "children": [] },
+              { "id": "cmp-textarea-form", "type": "form.textarea", "name": "Message", "props": { "label": "Message", "placeholder": "How can we help?", "rows": 5 }, "meta": { "locked": false, "hidden": false }, "children": [] },
+              { "id": "cmp-checkbox-form", "type": "form.checkbox", "name": "Consent", "props": { "label": "Email me a copy of this request", "checked": true }, "meta": { "locked": false, "hidden": false }, "children": [] },
+              { "id": "cmp-button-form", "type": "action.button", "name": "Submit", "props": { "text": "Send Message", "variant": "primary", "outline": false, "size": "md", "disabled": false }, "meta": { "locked": false, "hidden": false }, "children": [] }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "activePageId": "page-form"
+}

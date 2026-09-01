@@ -1,0 +1,46 @@
+{
+  "format": "MockApp",
+  "version": 1,
+  "metadata": {
+    "name": "Admin Table Example",
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "updatedAt": "2026-09-01T00:00:00.000Z",
+    "appVersion": "0.2.0",
+    "bootstrapVersion": "5.3.8",
+    "bootstrapIconsVersion": "1.13.1"
+  },
+  "settings": {
+    "grid": { "visible": true, "snap": true, "size": 8 },
+    "showGuides": true,
+    "autosaveIntervalMs": 1500
+  },
+  "pages": [
+    {
+      "id": "page-admin",
+      "name": "Users",
+      "viewportPreset": "desktop",
+      "root": {
+        "id": "root-admin",
+        "type": "page-root",
+        "name": "Canvas Root",
+        "props": {},
+        "meta": { "locked": false, "hidden": false },
+        "children": [
+          {
+            "id": "cmp-container-admin",
+            "type": "layout.container",
+            "name": "Admin Layout",
+            "props": { "fluid": false, "padding": "3", "gap": "3" },
+            "meta": { "locked": false, "hidden": false },
+            "children": [
+              { "id": "cmp-heading-admin", "type": "content.heading", "name": "Heading", "props": { "text": "User Directory", "level": "2", "marginBottom": "3" }, "meta": { "locked": false, "hidden": false }, "children": [] },
+              { "id": "cmp-alert-admin", "type": "feedback.alert", "name": "Alert", "props": { "text": "3 access requests are waiting for approval.", "variant": "warning" }, "meta": { "locked": false, "hidden": false }, "children": [] },
+              { "id": "cmp-table-admin", "type": "data.table", "name": "Users Table", "props": { "columnsText": "Name, Team, Status", "rowsText": "Taylor, Finance, Active\nMorgan, Support, Pending\nSydney, Product, Disabled\nHarper, Sales, Active", "striped": true, "hover": true }, "meta": { "locked": false, "hidden": false }, "children": [] }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "activePageId": "page-admin"
+}

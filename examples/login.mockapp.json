@@ -1,0 +1,73 @@
+{
+  "format": "MockApp",
+  "version": 1,
+  "metadata": {
+    "name": "Login Example",
+    "createdAt": "2026-09-01T00:00:00.000Z",
+    "updatedAt": "2026-09-01T00:00:00.000Z",
+    "appVersion": "0.2.0",
+    "bootstrapVersion": "5.3.8",
+    "bootstrapIconsVersion": "1.13.1"
+  },
+  "settings": {
+    "grid": { "visible": true, "snap": true, "size": 8 },
+    "showGuides": true,
+    "autosaveIntervalMs": 1500
+  },
+  "pages": [
+    {
+      "id": "page-login",
+      "name": "Login",
+      "viewportPreset": "desktop",
+      "root": {
+        "id": "root-login",
+        "type": "page-root",
+        "name": "Canvas Root",
+        "props": {},
+        "meta": { "locked": false, "hidden": false },
+        "children": [
+          {
+            "id": "cmp-container-login",
+            "type": "layout.container",
+            "name": "Login Layout",
+            "props": { "fluid": false, "padding": "3", "gap": "3" },
+            "meta": { "locked": false, "hidden": false },
+            "children": [
+              {
+                "id": "cmp-row-login",
+                "type": "layout.row",
+                "name": "Row",
+                "props": { "gap": "3", "alignItems": "center" },
+                "meta": { "locked": false, "hidden": false },
+                "children": [
+                  {
+                    "id": "cmp-col-login",
+                    "type": "layout.column",
+                    "name": "Column",
+                    "props": { "gap": "3", "widths": { "xs": "12", "sm": "12", "md": "6", "lg": "4", "xl": "4", "xxl": "4" } },
+                    "meta": { "locked": false, "hidden": false },
+                    "children": [
+                      {
+                        "id": "cmp-card-login",
+                        "type": "content.card",
+                        "name": "Card",
+                        "props": { "title": "Welcome back", "text": "Sign in to continue.", "shadow": "regular" },
+                        "meta": { "locked": false, "hidden": false },
+                        "children": [
+                          { "id": "cmp-input-email", "type": "form.input", "name": "Email", "props": { "label": "Email", "placeholder": "name@example.com", "value": "", "inputType": "email", "required": true }, "meta": { "locked": false, "hidden": false }, "children": [] },
+                          { "id": "cmp-input-password", "type": "form.input", "name": "Password", "props": { "label": "Password", "placeholder": "Enter password", "value": "", "inputType": "password", "required": true }, "meta": { "locked": false, "hidden": false }, "children": [] },
+                          { "id": "cmp-login-button", "type": "action.button", "name": "Button", "props": { "text": "Sign in", "variant": "primary", "outline": false, "size": "md", "disabled": false }, "meta": { "locked": false, "hidden": false }, "children": [] }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "activePageId": "page-login"
+}

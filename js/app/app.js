@@ -314,14 +314,13 @@
   function createField(labelText, prop, value) {
     var wrapper = document.createElement("div");
     wrapper.className = "property-group";
-    wrapper.innerHTML =
-      '<label>' +
-      escapeHtml(labelText) +
-      '</label><input data-prop="' +
-      escapeHtml(prop) +
-      '" value="' +
-      escapeAttribute(value) +
-      '" />';
+    var label = document.createElement("label");
+    label.textContent = labelText;
+    var input = document.createElement("input");
+    input.dataset.prop = prop;
+    input.value = value;
+    wrapper.appendChild(label);
+    wrapper.appendChild(input);
     return wrapper;
   }
 

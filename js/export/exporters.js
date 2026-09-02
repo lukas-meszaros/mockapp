@@ -89,7 +89,7 @@
   function renderComponentHtml(component, isPreview, options) {
     var props = component.props || {};
     var renderOptions = options || {};
-    var rootStyle = renderOptions.isRootChild ? rootPlacementStyle(component.frame) : "";
+    var rootStyle = renderOptions.isRootChild ? rootPlacementStyle(component) : "";
     var overrideHtml = renderCodeOverride(component, isPreview, renderOptions, rootStyle);
     if (overrideHtml) {
       return overrideHtml;
@@ -182,6 +182,14 @@
         return toastHtml(props, rootStyle);
       case "feedback.placeholder":
         return placeholderHtml(props, rootStyle);
+      case "drawing.rectangle":
+        return rectangleShapeHtml(component, props, rootStyle);
+      case "drawing.circle":
+        return circleShapeHtml(component, props, rootStyle);
+      case "drawing.triangle":
+        return triangleShapeHtml(component, props, rootStyle);
+      case "drawing.line":
+        return lineShapeHtml(component, props, rootStyle);
       case "interactive.accordion":
         return accordionHtml(component, props, rootStyle);
       case "interactive.collapse":
@@ -284,12 +292,19 @@
     return '<div class="preview-placeholder mockapp-render-error"' + rootStyle + '><strong>Render error</strong><div>' + utils.escapeHtml(message || "Invalid control HTML/CSS.") + '</div></div>';
   }
 
-  function rootPlacementStyle(frame) {
+  function rootPlacementStyle(component) {
+    var frame = component && component.frame;
     if (!frame) {
       return "";
     }
 
-    return ' style="position:absolute;left:' + frame.x + 'px;top:' + frame.y + 'px;width:' + frame.width + 'px;min-height:' + frame.height + 'px;"';
+    var style = 'position:absolute;left:' + frame.x + 'px;top:' + frame.y + 'px;width:' + frame.width + 'px;min-height:' + frame.height + 'px;';
+    var rotation = Number(component && component.props && component.props.rotation);
+    if (Number.isFinite(rotation) && rotation !== 0) {
+      style += 'transform: rotate(' + rotation + 'deg); transform-origin: 50% 50%;';
+    }
+
+    return ' style="' + style + '"';
   }
 
   function textStyle(renderOptions) {
@@ -405,6 +420,90 @@
       imageInner = '<div class="mock-figure-placeholder" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-height:120px;background:' + utils.escapeHtml(props.placeholderColor || "#d9e2f0") + ';border:1px dashed rgba(87, 106, 132, 0.36);color:#49566d;font-size:0.84rem;">' + utils.escapeHtml(props.placeholderText || "Figure Placeholder") + '</div>';
     }
     return '<figure class="mock-figure mb-0"' + rootStyle + '>' + imageInner + '<figcaption class="figure-caption mt-2">' + utils.escapeHtml(props.caption || "") + '</figcaption></figure>';
+  }
+
+  function rectangleShapeHtml(component, props, rootStyle) {
+    var viewport = resolveShapeViewport(component);
+    var strokeWidth = sanitizeThickness(props.lineThickness, 2);
+    var inset = strokeWidth / 2;
+    var width = 100 - strokeWidth;
+    var height = 100 - strokeWidth;
+    return '<div class="mock-shape"' + rootStyle + '><svg viewBox="0 0 100 100" preserveAspectRatio="none" width="' + viewport.width + '" height="' + viewport.height + '" style="display:block;width:100%;height:100%;min-height:inherit;"><rect x="' + inset + '" y="' + inset + '" width="' + width + '" height="' + height + '" fill="' + escapeShapeColor(props.fillColor, "#dbeafe") + '" stroke="' + escapeShapeColor(props.borderColor, "#2563eb") + '" stroke-width="' + strokeWidth + '" /></svg></div>';
+  }
+
+  function circleShapeHtml(component, props, rootStyle) {
+    var viewport = resolveShapeViewport(component);
+    var strokeWidth = sanitizeThickness(props.lineThickness, 2);
+    var radius = Math.max(0, 50 - strokeWidth / 2);
+    return '<div class="mock-shape"' + rootStyle + '><svg viewBox="0 0 100 100" preserveAspectRatio="none" width="' + viewport.width + '" height="' + viewport.height + '" style="display:block;width:100%;height:100%;min-height:inherit;"><ellipse cx="50" cy="50" rx="' + radius + '" ry="' + radius + '" fill="' + escapeShapeColor(props.fillColor, "#dcfce7") + '" stroke="' + escapeShapeColor(props.borderColor, "#16a34a") + '" stroke-width="' + strokeWidth + '" /></svg></div>';
+  }
+
+  function triangleShapeHtml(component, props, rootStyle) {
+    var viewport = resolveShapeViewport(component);
+    var strokeWidth = sanitizeThickness(props.lineThickness, 2);
+    return '<div class="mock-shape"' + rootStyle + '><svg viewBox="0 0 100 100" preserveAspectRatio="none" width="' + viewport.width + '" height="' + viewport.height + '" style="display:block;width:100%;height:100%;min-height:inherit;"><polygon points="50,4 96,96 4,96" fill="' + escapeShapeColor(props.fillColor, "#fef3c7") + '" stroke="' + escapeShapeColor(props.borderColor, "#d97706") + '" stroke-width="' + strokeWidth + '" stroke-linejoin="round" /></svg></div>';
+  }
+
+  function lineShapeHtml(component, props, rootStyle) {
+    var viewport = resolveShapeViewport(component);
+    var strokeWidth = sanitizeThickness(props.lineThickness, 1);
+    var color = escapeShapeColor(props.borderColor, "#334155");
+    var startX = percentToViewport(clampPercent(props.startX, 6), viewport.width);
+    var startY = percentToViewport(clampPercent(props.startY, 50), viewport.height);
+    var endX = percentToViewport(clampPercent(props.endX, 94), viewport.width);
+    var endY = percentToViewport(clampPercent(props.endY, 50), viewport.height);
+    var markerId = sanitizeMarkerId(String(component.id || "shape-line"));
+    var startMarker = props.arrowStart ? ' marker-start="url(#' + markerId + '-start)"' : "";
+    var endMarker = props.arrowEnd ? ' marker-end="url(#' + markerId + '-end)"' : "";
+    var defs = "";
+
+    if (props.arrowStart) {
+      defs += '<marker id="' + markerId + '-start" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0,0 L0,8 L8,4 Z" fill="' + color + '" /></marker>';
+    }
+    if (props.arrowEnd) {
+      defs += '<marker id="' + markerId + '-end" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L0,8 L8,4 Z" fill="' + color + '" /></marker>';
+    }
+
+    return '<div class="mock-shape"' + rootStyle + '><svg viewBox="0 0 ' + viewport.width + ' ' + viewport.height + '" width="' + viewport.width + '" height="' + viewport.height + '" style="display:block;width:100%;height:100%;min-height:inherit;overflow:visible;">' + (defs ? '<defs>' + defs + '</defs>' : '') + '<line x1="' + startX + '" y1="' + startY + '" x2="' + endX + '" y2="' + endY + '" stroke="' + color + '" stroke-width="' + strokeWidth + '" stroke-linecap="round"' + startMarker + endMarker + ' /></svg></div>';
+  }
+
+  function resolveShapeViewport(component) {
+    var frame = component && component.frame ? component.frame : null;
+    var width = frame ? Math.max(1, Math.round(Number(frame.width) || 100)) : 100;
+    var height = frame ? Math.max(1, Math.round(Number(frame.height) || 100)) : 100;
+    return { width: width, height: height };
+  }
+
+  function sanitizeThickness(value, fallback) {
+    var next = Number(value);
+    if (!Number.isFinite(next)) {
+      return fallback;
+    }
+    return Math.max(0, Math.min(24, next));
+  }
+
+  function escapeShapeColor(value, fallback) {
+    var color = String(value || fallback || "").trim();
+    if (!color) {
+      color = fallback || "#000000";
+    }
+    return utils.escapeHtml(color);
+  }
+
+  function sanitizeMarkerId(value) {
+    return String(value || "shape").replace(/[^a-zA-Z0-9_-]/g, "-");
+  }
+
+  function clampPercent(value, fallback) {
+    var next = Number(value);
+    if (!Number.isFinite(next)) {
+      next = fallback;
+    }
+    return Math.max(0, Math.min(100, next));
+  }
+
+  function percentToViewport(percent, size) {
+    return Math.round((Math.max(0, Math.min(100, percent)) / 100) * Math.max(1, Number(size) || 1));
   }
 
   function tabsHtml(props, rootStyle, mode) {

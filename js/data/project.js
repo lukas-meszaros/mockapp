@@ -427,11 +427,12 @@
   function normalizeFrame(frame, type) {
     var fallback = utils.deepClone(registry.getDefaultFrame(type));
     var source = frame || {};
+    var mins = frameMinimums(type);
     return {
       x: toNumber(source.x, fallback.x),
       y: toNumber(source.y, fallback.y),
-      width: Math.max(80, toNumber(source.width, fallback.width)),
-      height: Math.max(48, toNumber(source.height, fallback.height))
+      width: Math.max(mins.width, toNumber(source.width, fallback.width)),
+      height: Math.max(mins.height, toNumber(source.height, fallback.height))
     };
   }
 
@@ -546,12 +547,20 @@
 
   function normalizePlacement(type, placement) {
     var fallback = registry.getDefaultFrame(type);
+    var mins = frameMinimums(type);
     return {
       x: Math.max(0, toNumber(placement.x, fallback.x)),
       y: Math.max(0, toNumber(placement.y, fallback.y)),
-      width: Math.max(80, toNumber(placement.width, fallback.width)),
-      height: Math.max(48, toNumber(placement.height, fallback.height))
+      width: Math.max(mins.width, toNumber(placement.width, fallback.width)),
+      height: Math.max(mins.height, toNumber(placement.height, fallback.height))
     };
+  }
+
+  function frameMinimums(type) {
+    if (type === "drawing.line") {
+      return { width: 16, height: 16 };
+    }
+    return { width: 80, height: 48 };
   }
 
   function nextRootFrame(page, type) {

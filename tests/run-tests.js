@@ -29,7 +29,8 @@ global.localStorage = {
   'js/app/utils.js',
   'js/components/registry.js',
   'js/data/project.js',
-  'js/history/history.js'
+  'js/history/history.js',
+  'js/ui/canvas.js'
 ].forEach((relativePath) => {
   const filePath = path.join(root, relativePath);
   vm.runInThisContext(fs.readFileSync(filePath, 'utf8'), { filename: filePath });
@@ -38,6 +39,7 @@ global.localStorage = {
 const projectApi = window.MockApp.data.project;
 const historyApi = window.MockApp.history.manager;
 const registryApi = window.MockApp.components.registry;
+const canvasTestApi = window.MockApp.ui.canvas.__test;
 
 const project = projectApi.createProject();
 assert.equal(project.format, 'MockApp');
@@ -73,6 +75,10 @@ const collapse = projectApi.createComponent('interactive.collapse');
 const carousel = projectApi.createComponent('interactive.carousel');
 const tooltip = projectApi.createComponent('interactive.tooltip');
 const popover = projectApi.createComponent('interactive.popover');
+const rectangle = projectApi.createComponent('drawing.rectangle');
+const circle = projectApi.createComponent('drawing.circle');
+const triangle = projectApi.createComponent('drawing.triangle');
+const line = projectApi.createComponent('drawing.line');
 
 projectApi.insertComponent(page, null, container);
 projectApi.insertComponent(page, container.id, row);
@@ -113,6 +119,25 @@ assert.equal(collapse.type, 'interactive.collapse');
 assert.equal(carousel.type, 'interactive.carousel');
 assert.equal(tooltip.type, 'interactive.tooltip');
 assert.equal(popover.type, 'interactive.popover');
+assert.equal(rectangle.type, 'drawing.rectangle');
+assert.equal(rectangle.props.fillColor, '#dbeafe');
+assert.equal(rectangle.props.lineThickness, 1);
+assert.equal(rectangle.props.lockSides, false);
+assert.equal(rectangle.props.rotation, 0);
+assert.equal(circle.type, 'drawing.circle');
+assert.equal(circle.props.borderColor, '#16a34a');
+assert.equal(circle.props.lineThickness, 1);
+assert.equal(circle.props.rotation, 0);
+assert.equal(triangle.type, 'drawing.triangle');
+assert.equal(triangle.props.lineThickness, 1);
+assert.equal(triangle.props.lockSides, false);
+assert.equal(line.type, 'drawing.line');
+assert.equal(line.props.lineThickness, 1);
+assert.equal(line.props.arrowEnd, true);
+assert.equal(line.props.startX, 6);
+assert.equal(line.props.startY, 50);
+assert.equal(line.props.endX, 94);
+assert.equal(line.props.endY, 50);
 assert.equal(typeof button.code, 'object');
 assert.equal(button.code.html, '');
 assert.equal(button.code.css, '');
@@ -159,5 +184,57 @@ const undone = historyApi.undo(history);
 assert.equal(undone.metadata.name, 'MockApp Project');
 const redone = historyApi.redo(history);
 assert.equal(redone.metadata.name, 'Changed');
+
+const horizontal = canvasTestApi.lineGeometryFromPoints({ x: 10, y: 20 }, { x: 110, y: 20 });
+assert.equal(horizontal.frame.height, 16);
+assert.ok(Math.abs(horizontal.frame.y - 12) < 1e-9);
+let horizontalEndpoints = canvasTestApi.lineEndpointsToCanvas(horizontal.frame, horizontal.props);
+assert.ok(Math.abs(horizontalEndpoints.start.x - 10) < 1e-9);
+assert.ok(Math.abs(horizontalEndpoints.start.y - 20) < 1e-9);
+assert.ok(Math.abs(horizontalEndpoints.end.x - 110) < 1e-9);
+assert.ok(Math.abs(horizontalEndpoints.end.y - 20) < 1e-9);
+
+const nearHorizontal = canvasTestApi.lineGeometryFromPoints({ x: 10, y: 20 }, { x: 110, y: 21 });
+assert.equal(nearHorizontal.frame.height, 16);
+horizontalEndpoints = canvasTestApi.lineEndpointsToCanvas(nearHorizontal.frame, nearHorizontal.props);
+assert.ok(Math.abs(horizontalEndpoints.start.x - 10) < 1e-9);
+assert.ok(Math.abs(horizontalEndpoints.start.y - 20) < 1e-9);
+assert.ok(Math.abs(horizontalEndpoints.end.x - 110) < 1e-9);
+assert.ok(Math.abs(horizontalEndpoints.end.y - 21) < 1e-9);
+
+const vertical = canvasTestApi.lineGeometryFromPoints({ x: 40, y: 15 }, { x: 40, y: 215 });
+assert.equal(vertical.frame.width, 16);
+assert.ok(Math.abs(vertical.frame.x - 32) < 1e-9);
+let verticalEndpoints = canvasTestApi.lineEndpointsToCanvas(vertical.frame, vertical.props);
+assert.ok(Math.abs(verticalEndpoints.start.x - 40) < 1e-9);
+assert.ok(Math.abs(verticalEndpoints.start.y - 15) < 1e-9);
+assert.ok(Math.abs(verticalEndpoints.end.x - 40) < 1e-9);
+assert.ok(Math.abs(verticalEndpoints.end.y - 215) < 1e-9);
+
+const nearVertical = canvasTestApi.lineGeometryFromPoints({ x: 40, y: 15 }, { x: 41, y: 215 });
+assert.equal(nearVertical.frame.width, 16);
+verticalEndpoints = canvasTestApi.lineEndpointsToCanvas(nearVertical.frame, nearVertical.props);
+assert.ok(Math.abs(verticalEndpoints.start.x - 40) < 1e-9);
+assert.ok(Math.abs(verticalEndpoints.start.y - 15) < 1e-9);
+assert.ok(Math.abs(verticalEndpoints.end.x - 41) < 1e-9);
+assert.ok(Math.abs(verticalEndpoints.end.y - 215) < 1e-9);
+
+for (let deltaY = 0; deltaY <= 20; deltaY += 1) {
+  const sample = canvasTestApi.lineGeometryFromPoints({ x: 10, y: 20 }, { x: 110, y: 20 + deltaY });
+  const endpoints = canvasTestApi.lineEndpointsToCanvas(sample.frame, sample.props);
+  assert.ok(Math.abs(endpoints.start.x - 10) < 1e-9);
+  assert.ok(Math.abs(endpoints.start.y - 20) < 1e-9);
+  assert.ok(Math.abs(endpoints.end.x - 110) < 1e-9);
+  assert.ok(Math.abs(endpoints.end.y - (20 + deltaY)) < 1e-9);
+}
+
+for (let deltaX = 0; deltaX <= 20; deltaX += 1) {
+  const sample = canvasTestApi.lineGeometryFromPoints({ x: 40, y: 15 }, { x: 40 + deltaX, y: 215 });
+  const endpoints = canvasTestApi.lineEndpointsToCanvas(sample.frame, sample.props);
+  assert.ok(Math.abs(endpoints.start.x - 40) < 1e-9);
+  assert.ok(Math.abs(endpoints.start.y - 15) < 1e-9);
+  assert.ok(Math.abs(endpoints.end.x - (40 + deltaX)) < 1e-9);
+  assert.ok(Math.abs(endpoints.end.y - 215) < 1e-9);
+}
 
 console.log('All MockApp model tests passed.');

@@ -7,6 +7,7 @@
   var SNAP_THRESHOLD = 8;
   var MIN_FRAME_WIDTH = 80;
   var MIN_FRAME_HEIGHT = 48;
+  var MIN_LINE_FRAME_SIZE = 16;
   var GHOST_DRAG_THRESHOLD = 20;
 
   function usesContentSelectionChrome(component) {
@@ -126,9 +127,13 @@
       wrapper.style.width = component.frame.width + "px";
       wrapper.style.height = component.frame.height + "px";
       wrapper.style.zIndex = String((rootLayerIndex || 0) + 1);
+      applyWrapperRotation(wrapper, component);
     }
     var frame = document.createElement("div");
     frame.className = "node-frame" + (isSelected ? " is-selected" : "");
+    if (component.type === "drawing.line") {
+      frame.classList.add("line-frame");
+    }
     if (usesContentSelectionChrome(component)) {
       frame.classList.add("selection-follows-control");
     }
@@ -201,7 +206,11 @@
       });
     } else {
       enableFreeformDrag(controller, wrapper, frame, preview, component);
-      attachResizeHandles(controller, wrapper, frame, preview, component);
+      if (component.type === "drawing.line") {
+        attachLineEndpointHandles(controller, wrapper, frame, preview, component);
+      } else {
+        attachResizeHandles(controller, wrapper, frame, preview, component);
+      }
     }
     frame.addEventListener("click", function (event) {
       if (event.metaKey || event.ctrlKey || event.shiftKey) {
@@ -288,6 +297,10 @@
 
     root.dataset.marqueeBound = "true";
     root.addEventListener("pointerdown", function (event) {
+      if (beginPendingLinePlacement(controller, root, event)) {
+        return;
+      }
+
       if (controller.state.ui.preview || event.button !== 0 || event.target !== root) {
         return;
       }
@@ -350,6 +363,89 @@
     var right = frame.x + frame.width;
     var bottom = frame.y + frame.height;
     return !(right < rect.left || left > rect.right || bottom < rect.top || top > rect.bottom);
+  }
+
+  function beginPendingLinePlacement(controller, root, event) {
+    var pending = controller.state.ui.pendingCanvasInsert;
+    if (!pending || pending.type !== "drawing.line" || controller.state.ui.preview || event.button !== 0 || event.target !== root) {
+      return false;
+    }
+
+    event.preventDefault();
+    root.dataset.skipClearClick = "true";
+    var startPoint = toCanvasPoint(controller, event.clientX, event.clientY);
+    var preview = createLinePlacementPreview();
+    root.appendChild(preview);
+
+    function updatePreview(point) {
+      var geometry = lineGeometryFromPoints(startPoint, point);
+      preview.style.left = geometry.frame.x + "px";
+      preview.style.top = geometry.frame.y + "px";
+      preview.style.width = geometry.frame.width + "px";
+      preview.style.height = geometry.frame.height + "px";
+      var line = preview.querySelector("line");
+      line.setAttribute("x1", String(geometry.startX));
+      line.setAttribute("y1", String(geometry.startY));
+      line.setAttribute("x2", String(geometry.endX));
+      line.setAttribute("y2", String(geometry.endY));
+    }
+
+    function onMove(moveEvent) {
+      updatePreview(toCanvasPoint(controller, moveEvent.clientX, moveEvent.clientY));
+    }
+
+    function onUp(upEvent) {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      preview.remove();
+      controller.actions.addLineFromGeometry(lineGeometryFromPoints(startPoint, toCanvasPoint(controller, upEvent.clientX, upEvent.clientY)));
+    }
+
+    updatePreview(startPoint);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return true;
+  }
+
+  function createLinePlacementPreview() {
+    var preview = document.createElement("div");
+    preview.className = "line-placement-preview";
+    preview.innerHTML = '<svg viewBox="0 0 100 100" preserveAspectRatio="none" width="100" height="100"><line x1="0" y1="0" x2="100" y2="100" stroke="#334155" stroke-width="1" stroke-linecap="round" /></svg>';
+    return preview;
+  }
+
+  function lineGeometryFromPoints(startPoint, endPoint) {
+    var rawWidth = Math.abs(endPoint.x - startPoint.x);
+    var rawHeight = Math.abs(endPoint.y - startPoint.y);
+    var minX = Math.min(startPoint.x, endPoint.x);
+    var minY = Math.min(startPoint.y, endPoint.y);
+    var width = Math.max(MIN_LINE_FRAME_SIZE, rawWidth);
+    var height = Math.max(MIN_LINE_FRAME_SIZE, rawHeight);
+    var frameX = rawWidth < MIN_LINE_FRAME_SIZE ? minX - (MIN_LINE_FRAME_SIZE - rawWidth) / 2 : minX;
+    var frameY = rawHeight < MIN_LINE_FRAME_SIZE ? minY - (MIN_LINE_FRAME_SIZE - rawHeight) / 2 : minY;
+    var startX = ((startPoint.x - frameX) / width) * 100;
+    var startY = ((startPoint.y - frameY) / height) * 100;
+    var endX = ((endPoint.x - frameX) / width) * 100;
+    var endY = ((endPoint.y - frameY) / height) * 100;
+
+    return {
+      frame: {
+        x: Math.max(0, frameX),
+        y: Math.max(0, frameY),
+        width: width,
+        height: height
+      },
+      startX: startX,
+      startY: startY,
+      endX: endX,
+      endY: endY,
+      props: {
+        startX: startX,
+        startY: startY,
+        endX: endX,
+        endY: endY
+      }
+    };
   }
 
   function createRootDropHint(text) {
@@ -836,7 +932,140 @@
   }
 
   function isInteractiveTarget(target) {
-    return !!(target && target.closest("button, input, textarea, select, option, a, label, .resize-handle, .inline-edit-trigger, .inline-editor"));
+    return !!(target && target.closest("button, input, textarea, select, option, a, label, .resize-handle, .line-point-handle, .inline-edit-trigger, .inline-editor"));
+  }
+
+  function attachLineEndpointHandles(controller, wrapper, frame, preview, component) {
+    var startHandle = createLinePointHandle("start");
+    var endHandle = createLinePointHandle("end");
+    frame.appendChild(startHandle);
+    frame.appendChild(endHandle);
+    updateLinePointHandlePositions(startHandle, endHandle, component.props);
+
+    bindLinePointHandle(controller, wrapper, frame, preview, component, startHandle, endHandle, "start");
+    bindLinePointHandle(controller, wrapper, frame, preview, component, startHandle, endHandle, "end");
+  }
+
+  function createLinePointHandle(role) {
+    var handle = document.createElement("button");
+    handle.type = "button";
+    handle.className = "line-point-handle line-point-handle-" + role;
+    handle.setAttribute("aria-label", role === "start" ? "Move line start" : "Move line end");
+    return handle;
+  }
+
+  function bindLinePointHandle(controller, wrapper, frame, preview, component, startHandle, endHandle, role) {
+    var handle = role === "start" ? startHandle : endHandle;
+    handle.addEventListener("pointerdown", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      frame.classList.add("is-resizing");
+      var initial = lineEndpointsToCanvas(component.frame, component.props);
+      var scheduler = createFrameScheduler(function (nextState) {
+        applyLiveFrame(wrapper, preview, nextState.frame);
+        applyLiveLineProps(preview, nextState.frame, nextState.props);
+        updateLinePointHandlePositions(startHandle, endHandle, nextState.props);
+      });
+
+      function onMove(moveEvent) {
+        scheduler.schedule(nextLineStateFromPointer(controller, initial, role, moveEvent.clientX, moveEvent.clientY));
+      }
+
+      function onUp(upEvent) {
+        frame.classList.remove("is-resizing");
+        scheduler.flush();
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        var finalState = nextLineStateFromPointer(controller, initial, role, upEvent.clientX, upEvent.clientY);
+        controller.actions.updateComponentData(component.id, function (node) {
+          node.frame = finalState.frame;
+          node.props.startX = finalState.props.startX;
+          node.props.startY = finalState.props.startY;
+          node.props.endX = finalState.props.endX;
+          node.props.endY = finalState.props.endY;
+        }, "Line updated");
+      }
+
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    });
+  }
+
+  function linePropsSnapshot(props) {
+    return {
+      startX: clampPercentValue(props.startX, 6),
+      startY: clampPercentValue(props.startY, 50),
+      endX: clampPercentValue(props.endX, 94),
+      endY: clampPercentValue(props.endY, 50)
+    };
+  }
+
+  function lineEndpointsToCanvas(frame, props) {
+    return {
+      start: {
+        x: frame.x + (frame.width * clampPercentValue(props.startX, 6) / 100),
+        y: frame.y + (frame.height * clampPercentValue(props.startY, 50) / 100)
+      },
+      end: {
+        x: frame.x + (frame.width * clampPercentValue(props.endX, 94) / 100),
+        y: frame.y + (frame.height * clampPercentValue(props.endY, 50) / 100)
+      }
+    };
+  }
+
+  function nextLineStateFromPointer(controller, endpoints, role, clientX, clientY) {
+    var point = toCanvasPoint(controller, clientX, clientY);
+    var start = role === "start" ? point : endpoints.start;
+    var end = role === "end" ? point : endpoints.end;
+    var geometry = lineGeometryFromPoints(start, end);
+    return {
+      frame: geometry.frame,
+      props: geometry.props
+    };
+  }
+
+  function applyLiveLineProps(preview, frame, props) {
+    var svg = preview && preview.querySelector("svg");
+    var line = preview && preview.querySelector("line");
+    if (!svg || !line || !frame) {
+      return;
+    }
+    var width = Math.max(1, Math.round(frame.width));
+    var height = Math.max(1, Math.round(frame.height));
+    svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+    svg.setAttribute("width", String(width));
+    svg.setAttribute("height", String(height));
+    line.setAttribute("x1", String(percentToViewport(clampPercentValue(props.startX, 6), width)));
+    line.setAttribute("y1", String(percentToViewport(clampPercentValue(props.startY, 50), height)));
+    line.setAttribute("x2", String(percentToViewport(clampPercentValue(props.endX, 94), width)));
+    line.setAttribute("y2", String(percentToViewport(clampPercentValue(props.endY, 50), height)));
+  }
+
+  function updateLinePointHandlePositions(startHandle, endHandle, props) {
+    positionLinePointHandle(startHandle, clampPercentValue(props.startX, 6), clampPercentValue(props.startY, 50));
+    positionLinePointHandle(endHandle, clampPercentValue(props.endX, 94), clampPercentValue(props.endY, 50));
+  }
+
+  function positionLinePointHandle(handle, percentX, percentY) {
+    handle.style.left = "calc(" + percentX + "% - 6px)";
+    handle.style.top = "calc(" + percentY + "% - 6px)";
+  }
+
+  function clampPercentValue(value, fallback) {
+    var next = Number(value);
+    if (!Number.isFinite(next)) {
+      next = fallback;
+    }
+    return Math.max(0, Math.min(100, next));
+  }
+
+  function percentToViewport(percent, size) {
+    return (Math.max(0, Math.min(100, percent)) / 100) * Math.max(1, Number(size) || 1);
+  }
+
+  function linePointToPercent(offset, size) {
+    var denominator = Math.max(1, Number(size) || 1);
+    return Math.max(0, Math.min(100, Math.round((offset / denominator) * 100)));
   }
 
   function attachResizeHandles(controller, wrapper, frame, preview, component) {
@@ -859,7 +1088,7 @@
 
         function onMove(moveEvent) {
           var point = toCanvasPoint(controller, moveEvent.clientX, moveEvent.clientY);
-          var nextFrame = resizeFromDirection(startFrame, direction, point.x - startPoint.x, point.y - startPoint.y);
+          var nextFrame = resizeFromDirection(startFrame, direction, point.x - startPoint.x, point.y - startPoint.y, shouldLockSides(component));
           nextFrame = snapFrameToGrid(controller, nextFrame, moveEvent.altKey);
           nextFrame = snapFrameToNearbyEdges(controller, component.id, nextFrame, direction, moveEvent.altKey);
           frameScheduler.schedule(nextFrame);
@@ -871,7 +1100,7 @@
           window.removeEventListener("pointermove", onMove);
           window.removeEventListener("pointerup", onUp);
           var point = toCanvasPoint(controller, upEvent.clientX, upEvent.clientY);
-          var nextFrame = resizeFromDirection(startFrame, direction, point.x - startPoint.x, point.y - startPoint.y);
+          var nextFrame = resizeFromDirection(startFrame, direction, point.x - startPoint.x, point.y - startPoint.y, shouldLockSides(component));
           nextFrame = snapFrameToGrid(controller, nextFrame, upEvent.altKey);
           nextFrame = snapFrameToNearbyEdges(controller, component.id, nextFrame, direction, upEvent.altKey);
           controller.actions.setComponentFrame(component.id, nextFrame);
@@ -884,13 +1113,17 @@
     });
   }
 
-  function resizeFromDirection(startFrame, direction, deltaX, deltaY) {
+  function resizeFromDirectionWithLock(startFrame, direction, deltaX, deltaY, lockSides) {
     var nextFrame = {
       x: startFrame.x,
       y: startFrame.y,
       width: startFrame.width,
       height: startFrame.height
     };
+
+    if (lockSides) {
+      return proportionalResize(startFrame, direction, deltaX, deltaY);
+    }
 
     if (direction.indexOf("e") >= 0) {
       nextFrame.width = Math.max(MIN_FRAME_WIDTH, startFrame.width + deltaX);
@@ -912,6 +1145,76 @@
     nextFrame.x = Math.max(0, nextFrame.x);
     nextFrame.y = Math.max(0, nextFrame.y);
     return nextFrame;
+  }
+
+  function resizeFromDirection(startFrame, direction, deltaX, deltaY, lockSides) {
+    return resizeFromDirectionWithLock(startFrame, direction, deltaX, deltaY, !!lockSides);
+  }
+
+  function proportionalResize(startFrame, direction, deltaX, deltaY) {
+    var startWidth = Math.max(MIN_FRAME_WIDTH, startFrame.width);
+    var startHeight = Math.max(MIN_FRAME_HEIGHT, startFrame.height);
+    var ratio = startWidth / startHeight;
+    var widthDelta = direction.indexOf("w") >= 0 ? -deltaX : deltaX;
+    var heightDelta = direction.indexOf("n") >= 0 ? -deltaY : deltaY;
+    var useWidth = Math.abs(widthDelta / startWidth) >= Math.abs(heightDelta / startHeight);
+
+    var nextWidth = startWidth;
+    var nextHeight = startHeight;
+    if (useWidth) {
+      nextWidth = Math.max(MIN_FRAME_WIDTH, startWidth + widthDelta);
+      nextHeight = Math.max(MIN_FRAME_HEIGHT, Math.round(nextWidth / ratio));
+      nextWidth = Math.max(MIN_FRAME_WIDTH, Math.round(nextHeight * ratio));
+    } else {
+      nextHeight = Math.max(MIN_FRAME_HEIGHT, startHeight + heightDelta);
+      nextWidth = Math.max(MIN_FRAME_WIDTH, Math.round(nextHeight * ratio));
+      nextHeight = Math.max(MIN_FRAME_HEIGHT, Math.round(nextWidth / ratio));
+    }
+
+    var nextX = startFrame.x;
+    var nextY = startFrame.y;
+    if (direction.indexOf("w") >= 0) {
+      nextX = startFrame.x + (startWidth - nextWidth);
+    }
+    if (direction.indexOf("n") >= 0) {
+      nextY = startFrame.y + (startHeight - nextHeight);
+    }
+
+    return {
+      x: Math.max(0, Math.round(nextX)),
+      y: Math.max(0, Math.round(nextY)),
+      width: Math.max(MIN_FRAME_WIDTH, Math.round(nextWidth)),
+      height: Math.max(MIN_FRAME_HEIGHT, Math.round(nextHeight))
+    };
+  }
+
+  function shouldLockSides(component) {
+    if (!component || !component.props) {
+      return false;
+    }
+    var value = component.props.lockSides;
+    if (typeof value === "string") {
+      return value.toLowerCase() === "true";
+    }
+    return value === true;
+  }
+
+  function applyWrapperRotation(wrapper, component) {
+    if (!wrapper || !isDrawingComponent(component)) {
+      return;
+    }
+    var rotation = Number(component.props && component.props.rotation);
+    if (!Number.isFinite(rotation) || rotation === 0) {
+      wrapper.style.transform = "";
+      wrapper.style.transformOrigin = "";
+      return;
+    }
+    wrapper.style.transform = "rotate(" + rotation + "deg)";
+    wrapper.style.transformOrigin = "50% 50%";
+  }
+
+  function isDrawingComponent(component) {
+    return !!(component && typeof component.type === "string" && component.type.indexOf("drawing.") === 0);
   }
 
   function snapFrameToGrid(controller, frame, disableSnap) {
@@ -1167,6 +1470,10 @@
   }
 
   MockApp.ui.canvas = {
-    renderCanvas: renderCanvas
+    renderCanvas: renderCanvas,
+    __test: {
+      lineGeometryFromPoints: lineGeometryFromPoints,
+      lineEndpointsToCanvas: lineEndpointsToCanvas
+    }
   };
 })(window.MockApp);

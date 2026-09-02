@@ -31,6 +31,10 @@
       if (!button || !root.contains(button)) {
         return;
       }
+      if (button.dataset.componentType === "drawing.line") {
+        controller.actions.beginCanvasInsert(button.dataset.componentType);
+        return;
+      }
       controller.actions.addComponent(button.dataset.componentType);
     });
     root.addEventListener("dragstart", function (event) {

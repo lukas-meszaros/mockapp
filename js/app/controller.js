@@ -27,6 +27,7 @@
           activeTab: "palette",
           paletteFilter: "",
           paletteCollapsed: utils.deepClone(preferences.paletteCollapsed || {}),
+          pendingCanvasInsert: null,
           preview: false,
           inlineEdit: null,
           zoom: preferences.zoom || 1,
@@ -111,7 +112,17 @@
         var contextIndex = parentId ? projectData.buildContextIndex(page) : null;
         projectData.insertComponent(page, parentId, component, null, null, contextIndex);
         controller.state.selection.ids = [component.id];
+        controller.state.ui.pendingCanvasInsert = null;
       }, "Component added");
+    };
+
+    controller.actions.beginCanvasInsert = function (type) {
+      controller.state.ui.pendingCanvasInsert = type ? { type: type } : null;
+      controller.state.selection.ids = [];
+      renderSelectionViews(controller);
+      if (type === "drawing.line") {
+        shell.showToast(controller.refs, "Drag on the canvas to draw a line.", false);
+      }
     };
 
     controller.actions.addComponentAt = function (type, placement) {
@@ -120,7 +131,27 @@
         var component = projectData.createComponent(type);
         projectData.insertComponent(page, null, component, null, placement);
         controller.state.selection.ids = [component.id];
+        controller.state.ui.pendingCanvasInsert = null;
       }, "Component added");
+    };
+
+    controller.actions.addLineFromGeometry = function (geometry) {
+      commitProjectChange(controller, function (project) {
+        var page = projectData.getActivePage(project);
+        var component = projectData.createComponent("drawing.line");
+        var safeGeometry = geometry || {};
+        var frame = safeGeometry.frame || component.frame;
+        var props = safeGeometry.props || {};
+
+        projectData.insertComponent(page, null, component, null, frame);
+
+        component.props.startX = Number.isFinite(Number(props.startX)) ? Number(props.startX) : component.props.startX;
+        component.props.startY = Number.isFinite(Number(props.startY)) ? Number(props.startY) : component.props.startY;
+        component.props.endX = Number.isFinite(Number(props.endX)) ? Number(props.endX) : component.props.endX;
+        component.props.endY = Number.isFinite(Number(props.endY)) ? Number(props.endY) : component.props.endY;
+        controller.state.selection.ids = [component.id];
+        controller.state.ui.pendingCanvasInsert = null;
+      }, "Line added");
     };
 
     controller.actions.moveComponent = function (componentId, targetParentId, placement) {
@@ -721,6 +752,7 @@
     });
     return count;
   }
+
 
   function selectionLabel(controller) {
     if (controller.state.selection.ids.length !== 1) {

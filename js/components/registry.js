@@ -570,6 +570,75 @@
         { path: "props.hover", label: "Hover", type: "checkbox" }
       ]
     },
+    {
+      type: "drawing.rectangle",
+      name: "Rectangle",
+      icon: "square",
+      category: "Drawing",
+      tags: ["drawing", "shape", "rectangle"],
+      allowsChildren: false,
+        defaults: { fillColor: "#dbeafe", borderColor: "#2563eb", lineThickness: 1, lockSides: false, rotation: 0 },
+      fields: [
+        { path: "props.fillColor", label: "Fill Color", type: "color" },
+        { path: "props.borderColor", label: "Border Color", type: "color" },
+        { path: "props.lineThickness", label: "Line Thickness", type: "number", min: 0, max: 24 },
+        { path: "props.lockSides", label: "Lock Sides", type: "checkbox" },
+        { path: "props.rotation", label: "Rotation", type: "number", min: -360, max: 360 }
+      ]
+    },
+    {
+      type: "drawing.circle",
+      name: "Circle",
+      icon: "circle",
+      category: "Drawing",
+      tags: ["drawing", "shape", "circle", "ellipse"],
+      allowsChildren: false,
+        defaults: { fillColor: "#dcfce7", borderColor: "#16a34a", lineThickness: 1, lockSides: false, rotation: 0 },
+      fields: [
+        { path: "props.fillColor", label: "Fill Color", type: "color" },
+        { path: "props.borderColor", label: "Border Color", type: "color" },
+        { path: "props.lineThickness", label: "Line Thickness", type: "number", min: 0, max: 24 },
+        { path: "props.lockSides", label: "Lock Sides", type: "checkbox" },
+        { path: "props.rotation", label: "Rotation", type: "number", min: -360, max: 360 }
+      ]
+    },
+    {
+      type: "drawing.triangle",
+      name: "Triangle",
+      icon: "triangle",
+      category: "Drawing",
+      tags: ["drawing", "shape", "triangle"],
+      allowsChildren: false,
+        defaults: { fillColor: "#fef3c7", borderColor: "#d97706", lineThickness: 1, lockSides: false, rotation: 0 },
+      fields: [
+        { path: "props.fillColor", label: "Fill Color", type: "color" },
+        { path: "props.borderColor", label: "Border Color", type: "color" },
+        { path: "props.lineThickness", label: "Line Thickness", type: "number", min: 0, max: 24 },
+        { path: "props.lockSides", label: "Lock Sides", type: "checkbox" },
+        { path: "props.rotation", label: "Rotation", type: "number", min: -360, max: 360 }
+      ]
+    },
+    {
+      type: "drawing.line",
+      name: "Line",
+      icon: "dash-lg",
+      category: "Drawing",
+      tags: ["drawing", "shape", "line", "arrow"],
+      allowsChildren: false,
+        defaults: { fillColor: "#ffffff", borderColor: "#334155", lineThickness: 1, arrowStart: false, arrowEnd: true, startX: 6, startY: 50, endX: 94, endY: 50, lockSides: false },
+      fields: [
+        { path: "props.fillColor", label: "Fill Color", type: "color" },
+        { path: "props.borderColor", label: "Border Color", type: "color" },
+        { path: "props.lineThickness", label: "Line Thickness", type: "number", min: 1, max: 24 },
+        { path: "props.arrowStart", label: "Arrow Start", type: "checkbox" },
+        { path: "props.arrowEnd", label: "Arrow End", type: "checkbox" },
+        { path: "props.startX", label: "Start X", type: "number", min: 0, max: 100 },
+        { path: "props.startY", label: "Start Y", type: "number", min: 0, max: 100 },
+        { path: "props.endX", label: "End X", type: "number", min: 0, max: 100 },
+        { path: "props.endY", label: "End Y", type: "number", min: 0, max: 100 },
+        { path: "props.lockSides", label: "Lock Sides", type: "checkbox" }
+      ]
+    },
     templateEntry("layout.container-fluid", "Fluid Container", "bounding-box-circles", "Layout", ["layout", "container", "fluid"], "container-fluid"),
     templateEntry("layout.stack", "Stack", "distribute-vertical", "Layout", ["layout", "stack", "vertical"], "stack"),
     templateEntry("layout.hstack", "Horizontal Stack", "distribute-horizontal", "Layout", ["layout", "stack", "horizontal"], "horizontal-stack"),
@@ -764,6 +833,12 @@
       case "interactive.tooltip":
       case "interactive.popover":
         return { x: 48, y: 48, width: 240, height: 100 };
+      case "drawing.rectangle":
+      case "drawing.circle":
+      case "drawing.triangle":
+        return { x: 48, y: 48, width: 220, height: 160 };
+      case "drawing.line":
+        return { x: 48, y: 48, width: 280, height: 80 };
       default:
         return { x: 48, y: 48, width: 320, height: 160 };
     }

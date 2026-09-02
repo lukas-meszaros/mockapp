@@ -211,7 +211,7 @@ Do NOT modify when: Changing data model invariants.
 ## js/ui/inspector.js
 Purpose: Structured property inspector renderer.
 Subsystem: Inspector UI.
-Responsibilities: Renders page settings, component fields, root-level frame controls, action controls from registry schema, advanced designers (for example table and toolbar modals), and per-component advanced HTML/CSS override editors with syntax highlighting previews.
+Responsibilities: Renders page settings, component fields, root-level frame controls, action controls from registry schema, advanced designers (for example table and toolbar modals), and popup-based per-component HTML/CSS override editing.
 Depends on: `js/components/registry.js`, `js/data/project.js`, `js/app/utils.js`.
 Modify when: Changing property editing UX.
 Do NOT modify when: Adding low-level project traversal helpers.

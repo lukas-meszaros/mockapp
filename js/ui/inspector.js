@@ -28,7 +28,6 @@
       refs.inspectorRoot.appendChild(renderFrameSection(controller, component));
     }
     refs.inspectorRoot.appendChild(renderFieldGrid(controller, component, schema));
-    refs.inspectorRoot.appendChild(renderCodeEditorSection(controller, component));
     refs.inspectorRoot.appendChild(renderComponentActions(controller, component));
   }
 
@@ -154,7 +153,7 @@
     section.appendChild(title);
 
     var actions = document.createElement("div");
-    actions.className = "inline-selects";
+    actions.className = "component-action-row";
     actions.appendChild(actionButton("Duplicate", "copy", function () {
       controller.actions.duplicateSelected();
     }));
@@ -175,41 +174,23 @@
     }
 
     actions.appendChild(actionButton("Edit HTML/CSS", "code-slash", function () {
-      openComponentCodeEditor(controller, component.id, "html");
+      openComponentCodeEditor(controller, component.id);
     }));
 
     section.appendChild(actions);
     return section;
   }
 
-  function openComponentCodeEditor(controller, componentOrId, field) {
+  function openComponentCodeEditor(controller, componentOrId) {
     var componentId = typeof componentOrId === "string" ? componentOrId : (componentOrId && componentOrId.id);
-    focusComponentCodeEditor(controller, componentId, field || "html");
-  }
-
-  function resolveComponentById(controller, componentId) {
-    if (!componentId) {
-      return null;
+    var resolved = resolveComponentById(controller, componentId);
+    if (!resolved) {
+      shell.showToast(controller.refs, "Unable to find selected control.", true);
+      return;
     }
-    var page = projectData.getActivePage(controller.state.project);
-    return projectData.findComponentContext(page, componentId, projectData.buildContextIndex(page));
-  }
 
-  function renderCodeEditorSection(controller, component) {
-    var section = document.createElement("section");
-    section.className = "inspector-section";
-    var title = document.createElement("h3");
-    title.className = "inspector-title";
-    title.textContent = "Advanced Code";
-    section.appendChild(title);
-
-    var note = document.createElement("div");
-    note.className = "field-help";
-    note.textContent = "Override this control with custom HTML and CSS. Invalid code shows a render error on this control only.";
-    section.appendChild(note);
-
-    var code = component.code || { html: "", css: "" };
-    var effectiveHtml = String(code.html || "").trim();
+    var component = resolved.node;
+    var effectiveHtml = String((component.code && component.code.html) || "").trim();
     if (!effectiveHtml) {
       effectiveHtml = exporters.renderComponentHtml(component, false, {
         isRootChild: false,
@@ -220,200 +201,102 @@
       });
     }
 
-    var draft = {
-      html: effectiveHtml,
-      css: String(code.css || "")
-    };
-    var baseline = {
-      html: draft.html,
-      css: draft.css
-    };
-
-    var htmlEditor = renderCodeField("HTML", "html", draft.html, function (value) {
-      draft.html = value;
-      updateCodeDirtyState(section, baseline, draft);
+    shell.showDialog(controller.refs, {
+      title: "Control HTML/CSS",
+      confirmLabel: "Apply",
+      onCancel: function () {},
+      renderBody: function (body) {
+        body.appendChild(designerHelp("Edit HTML and CSS for this selected control."));
+        body.appendChild(renderCodeTextareaField("HTML", "html", effectiveHtml, 12));
+        body.appendChild(renderCodeTextareaField("CSS", "css", String((component.code && component.code.css) || ""), 10));
+      },
+      onConfirm: function (body) {
+        var htmlInput = body.querySelector("[data-code-editor='html']");
+        var cssInput = body.querySelector("[data-code-editor='css']");
+        controller.actions.updateComponentData(component.id, function (node) {
+          if (!node.code || typeof node.code !== "object") {
+            node.code = { html: "", css: "" };
+          }
+          node.code.html = String((htmlInput && htmlInput.value) || "");
+          node.code.css = String((cssInput && cssInput.value) || "");
+        }, "Control code updated");
+      }
     });
-    var cssEditor = renderCodeField("CSS", "css", draft.css, function (value) {
-      draft.css = value;
-      updateCodeDirtyState(section, baseline, draft);
-    });
-    section.appendChild(htmlEditor);
-    section.appendChild(cssEditor);
-
-    var toolbar = document.createElement("div");
-    toolbar.className = "code-editor-toolbar";
-    var applyButton = document.createElement("button");
-    applyButton.type = "button";
-    applyButton.className = "tool-button is-active";
-    applyButton.innerHTML = '<i class="bi bi-check2"></i>Apply Code';
-    applyButton.addEventListener("click", function () {
-      controller.actions.updateComponentData(component.id, function (node) {
-        if (!node.code || typeof node.code !== "object") {
-          node.code = { html: "", css: "" };
-        }
-        node.code.html = draft.html;
-        node.code.css = draft.css;
-      }, "Control code updated");
-    });
-    toolbar.appendChild(applyButton);
-
-    var resetButton = document.createElement("button");
-    resetButton.type = "button";
-    resetButton.className = "tool-button";
-    resetButton.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i>Reset Code';
-    resetButton.addEventListener("click", function () {
-      draft.html = "";
-      draft.css = "";
-      setCodeFieldValue(htmlEditor, "");
-      setCodeFieldValue(cssEditor, "");
-      baseline.html = "";
-      baseline.css = "";
-      controller.actions.updateComponentData(component.id, function (node) {
-        if (!node.code || typeof node.code !== "object") {
-          node.code = { html: "", css: "" };
-        }
-        node.code.html = "";
-        node.code.css = "";
-      }, "Control code reset");
-    });
-    toolbar.appendChild(resetButton);
-
-    section.appendChild(toolbar);
-    updateCodeDirtyState(section, baseline, draft);
-    return section;
   }
 
-  function updateCodeDirtyState(section, baseline, draft) {
-    var isDirty = String(draft.html || "") !== String(baseline.html || "") || String(draft.css || "") !== String(baseline.css || "");
-    section.classList.toggle("code-editor-dirty", isDirty);
+  function resolveComponentById(controller, componentId) {
+    if (!componentId) {
+      return null;
+    }
+    var page = projectData.getActivePage(controller.state.project);
+    return projectData.findComponentContext(page, componentId, projectData.buildContextIndex(page));
   }
 
-  function renderCodeField(labelText, language, value, onChange) {
+  function renderCodeTextareaField(labelText, language, value, rows) {
     var wrapper = document.createElement("div");
-    wrapper.className = "property-field code-editor-field";
-    wrapper.dataset.codeLanguage = language;
+    wrapper.className = "property-field";
 
     var label = document.createElement("label");
     label.textContent = labelText;
     wrapper.appendChild(label);
 
-    var input = document.createElement("pre");
-    input.className = "code-editor-input";
-    input.setAttribute("contenteditable", "true");
-    input.setAttribute("role", "textbox");
-    input.setAttribute("aria-multiline", "true");
-    input.setAttribute("spellcheck", "false");
-    input.dataset.codeField = language;
-    input.dataset.codeLanguage = language === "css" ? "css" : "xml";
-    wrapper.appendChild(input);
+    var editor = document.createElement("div");
+    editor.className = "code-popup-editor";
 
-    function refresh(nextValue) {
-      var caretOffset = getCaretCharacterOffset(input);
-      input.innerHTML = highlightSyntax(nextValue, language);
-      input.classList.add("hljs");
-      input.classList.add("language-" + (language === "css" ? "css" : "xml"));
-      setCaretCharacterOffset(input, caretOffset);
-      onChange(nextValue);
-    }
+    var highlight = document.createElement("pre");
+    highlight.className = "code-popup-highlight hljs language-" + (language === "css" ? "css" : "xml");
+    highlight.setAttribute("aria-hidden", "true");
+    editor.appendChild(highlight);
 
-    input.addEventListener("input", function () {
-      refresh(codeEditorValue(input));
+    var input = document.createElement("textarea");
+    input.className = "inspector-textarea code-popup-textarea";
+    input.setAttribute("data-code-editor", language);
+    input.rows = rows;
+    input.spellcheck = false;
+    input.wrap = "off";
+    input.value = String(value || "");
+    editor.appendChild(input);
+    wrapper.appendChild(editor);
+
+    var wrapToggle = document.createElement("label");
+    wrapToggle.className = "code-wrap-toggle";
+    var wrapInput = document.createElement("input");
+    wrapInput.type = "checkbox";
+    wrapInput.checked = true;
+    var wrapText = document.createElement("span");
+    wrapText.textContent = "Word wrap";
+    wrapToggle.appendChild(wrapInput);
+    wrapToggle.appendChild(wrapText);
+    wrapper.appendChild(wrapToggle);
+
+    editor.classList.add("is-wrapped");
+    input.wrap = "soft";
+
+    wrapInput.addEventListener("change", function () {
+      var isWrapped = wrapInput.checked;
+      editor.classList.toggle("is-wrapped", isWrapped);
+      input.wrap = isWrapped ? "soft" : "off";
     });
 
-    refresh(String(value || ""));
+    function renderHighlight() {
+      highlight.innerHTML = highlightSyntaxCode(input.value, language);
+      if (!input.value.endsWith("\n")) {
+        highlight.innerHTML += "\n";
+      }
+    }
+
+    input.addEventListener("input", renderHighlight);
+    input.addEventListener("scroll", function () {
+      highlight.scrollTop = input.scrollTop;
+      highlight.scrollLeft = input.scrollLeft;
+    });
+
+    renderHighlight();
+
     return wrapper;
   }
 
-  function setCodeFieldValue(wrapper, value) {
-    var input = wrapper.querySelector(".code-editor-input");
-    var language = wrapper.dataset.codeLanguage || "html";
-    if (!input) {
-      return;
-    }
-    input.innerHTML = highlightSyntax(value, language);
-    input.classList.add("hljs");
-    input.classList.add("language-" + (language === "css" ? "css" : "xml"));
-  }
-
-  function codeEditorValue(node) {
-    return String((node && node.textContent) || "").replace(/\u00a0/g, " ");
-  }
-
-  function getCaretCharacterOffset(node) {
-    var selection = window.getSelection ? window.getSelection() : null;
-    if (!selection || selection.rangeCount === 0) {
-      return 0;
-    }
-
-    var range = selection.getRangeAt(0);
-    if (!node.contains(range.startContainer)) {
-      return 0;
-    }
-
-    var preRange = range.cloneRange();
-    preRange.selectNodeContents(node);
-    preRange.setEnd(range.startContainer, range.startOffset);
-    return preRange.toString().length;
-  }
-
-  function setCaretCharacterOffset(node, offset) {
-    var selection = window.getSelection ? window.getSelection() : null;
-    if (!selection) {
-      return;
-    }
-
-    var range = document.createRange();
-    range.selectNodeContents(node);
-    range.collapse(true);
-
-    var remaining = Math.max(0, offset || 0);
-    var stack = [node];
-    var found = false;
-
-    while (stack.length && !found) {
-      var current = stack.shift();
-      if (current.nodeType === Node.TEXT_NODE) {
-        var length = current.textContent.length;
-        if (remaining <= length) {
-          range.setStart(current, remaining);
-          range.collapse(true);
-          found = true;
-          break;
-        }
-        remaining -= length;
-      } else {
-        for (var i = 0; i < current.childNodes.length; i += 1) {
-          stack.push(current.childNodes[i]);
-        }
-      }
-    }
-
-    if (!found) {
-      range.selectNodeContents(node);
-      range.collapse(false);
-    }
-
-    selection.removeAllRanges();
-    selection.addRange(range);
-  }
-
-  function focusComponentCodeEditor(controller, componentId, field) {
-    var targetField = field === "css" ? "css" : "html";
-    if (componentId && controller.state.selection.ids[0] !== componentId) {
-      controller.actions.selectOnly(componentId);
-    }
-
-    window.requestAnimationFrame(function () {
-      var input = controller.refs.inspectorRoot.querySelector('.code-editor-input[data-code-field="' + targetField + '"]');
-      if (!input) {
-        return;
-      }
-      input.focus();
-      setCaretCharacterOffset(input, codeEditorValue(input).length);
-    });
-  }
-
-  function highlightSyntax(source, language) {
+  function highlightSyntaxCode(source, language) {
     var text = String(source || "");
     var targetLanguage = language === "css" ? "css" : "xml";
 
@@ -927,7 +810,6 @@
 
   MockApp.ui.inspector = {
     renderInspector: renderInspector,
-    openComponentCodeEditor: openComponentCodeEditor,
-    focusComponentCodeEditor: focusComponentCodeEditor
+    openComponentCodeEditor: openComponentCodeEditor
   };
 })(window.MockApp);

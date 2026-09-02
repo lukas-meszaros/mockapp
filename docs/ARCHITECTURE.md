@@ -90,8 +90,8 @@ The saved project model contains pages, explicit nested component trees, metadat
 
 - The canvas renders trusted internal HTML templates generated from component metadata and escaped user content.
 - The inspector is schema-driven from registry field definitions.
-- Selected controls can optionally provide per-instance `code.html` and `code.css` overrides through the inspector.
-- The same HTML/CSS editor is also launchable directly from each control on the canvas.
+- Selected controls can optionally provide per-instance `code.html` and `code.css` overrides through an action-triggered editor dialog.
+- The same HTML/CSS editor dialog is launchable from both inspector actions and each control on the canvas.
 - CSS overrides are scoped to the owning control wrapper to reduce cross-control style bleed.
 - If an override fails validation, only that control renders an inline error placeholder.
 - The tree view and page list are separate left-panel surfaces.

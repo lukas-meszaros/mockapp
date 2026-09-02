@@ -423,6 +423,25 @@ body.preview-mode .viewport-frame {
   height: 1px;
 }
 
+.drag-ghost-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 32;
+}
+
+.drag-ghost-item {
+  position: absolute;
+  border: 1px dashed rgba(20, 99, 255, 0.75);
+  border-radius: 8px;
+  background: rgba(20, 99, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(20, 99, 255, 0.18);
+}
+
+.canvas-node.is-ghost-drag-source {
+  opacity: 0.35;
+}
+
 .node-frame.is-freeform {
   min-height: 100%;
 }

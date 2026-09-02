@@ -214,14 +214,151 @@
         var htmlInput = body.querySelector("[data-code-editor='html']");
         var cssInput = body.querySelector("[data-code-editor='css']");
         controller.actions.updateComponentData(component.id, function (node) {
+          var nextHtml = String((htmlInput && htmlInput.value) || "");
+          var nextCss = String((cssInput && cssInput.value) || "");
           if (!node.code || typeof node.code !== "object") {
             node.code = { html: "", css: "" };
           }
-          node.code.html = String((htmlInput && htmlInput.value) || "");
-          node.code.css = String((cssInput && cssInput.value) || "");
+          node.code.html = nextHtml;
+          node.code.css = nextCss;
+          syncPropsFromCustomHtml(node, nextHtml);
         }, "Control code updated");
       }
     });
+  }
+
+  function syncPropsFromCustomHtml(component, htmlText) {
+    if (!component || !component.type || !component.props) {
+      return;
+    }
+
+    var root = parseHtmlRoot(htmlText);
+    if (!root) {
+      return;
+    }
+
+    var nextProps = derivePropsFromCustomHtml(component.type, root);
+    Object.keys(nextProps).forEach(function (key) {
+      component.props[key] = nextProps[key];
+    });
+  }
+
+  function parseHtmlRoot(htmlText) {
+    var text = String(htmlText || "").trim();
+    if (!text || typeof window.DOMParser !== "function") {
+      return null;
+    }
+
+    try {
+      var parser = new window.DOMParser();
+      var doc = parser.parseFromString('<div data-mockapp-root="true">' + text + '</div>', "text/html");
+      if (!doc || !doc.body) {
+        return null;
+      }
+      return doc.body.querySelector("[data-mockapp-root='true']");
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function derivePropsFromCustomHtml(type, root) {
+    var next = {};
+    if (!root) {
+      return next;
+    }
+
+    if (type === "form.select") {
+      var selectLabel = readLabelText(root);
+      if (selectLabel) {
+        next.label = selectLabel;
+      }
+
+      var select = root.querySelector("select");
+      if (select) {
+        var optionLabels = Array.prototype.slice.call(select.querySelectorAll("option")).map(function (option) {
+          return String(option.textContent || "").trim();
+        }).filter(Boolean);
+        if (optionLabels.length) {
+          next.optionsText = optionLabels.join("\n");
+        }
+        next.multiple = !!select.multiple;
+      }
+      return next;
+    }
+
+    if (type === "form.input") {
+      var inputLabel = readLabelText(root);
+      if (inputLabel) {
+        next.label = inputLabel;
+      }
+      var input = root.querySelector("input");
+      if (input) {
+        if (input.getAttribute("placeholder") != null) {
+          next.placeholder = String(input.getAttribute("placeholder") || "");
+        }
+        if (input.getAttribute("value") != null) {
+          next.value = String(input.getAttribute("value") || "");
+        }
+        if (input.getAttribute("type")) {
+          next.inputType = String(input.getAttribute("type") || "text").toLowerCase();
+        }
+        next.required = input.hasAttribute("required");
+      }
+      return next;
+    }
+
+    if (type === "form.textarea") {
+      var textAreaLabel = readLabelText(root);
+      if (textAreaLabel) {
+        next.label = textAreaLabel;
+      }
+      var textarea = root.querySelector("textarea");
+      if (textarea) {
+        if (textarea.getAttribute("placeholder") != null) {
+          next.placeholder = String(textarea.getAttribute("placeholder") || "");
+        }
+        if (textarea.getAttribute("rows") != null) {
+          var parsedRows = Number(textarea.getAttribute("rows"));
+          if (Number.isFinite(parsedRows)) {
+            next.rows = parsedRows;
+          }
+        }
+      }
+      return next;
+    }
+
+    if (type === "form.checkbox" || type === "form.radio" || type === "form.switch") {
+      var checkLabel = readCheckboxLikeLabelText(root);
+      if (checkLabel) {
+        next.label = checkLabel;
+      }
+      var checkboxInput = root.querySelector("input");
+      if (checkboxInput) {
+        next.checked = !!checkboxInput.checked;
+        if (type === "form.radio" && checkboxInput.getAttribute("name")) {
+          next.groupName = String(checkboxInput.getAttribute("name") || "");
+        }
+      }
+      return next;
+    }
+
+    return next;
+  }
+
+  function readLabelText(root) {
+    var label = root.querySelector("label.form-label") || root.querySelector("label");
+    if (!label) {
+      return "";
+    }
+    return String(label.textContent || "").trim();
+  }
+
+  function readCheckboxLikeLabelText(root) {
+    var label = root.querySelector("label.form-check-label") || root.querySelector("label");
+    if (!label) {
+      return "";
+    }
+    return String(label.textContent || "").trim();
   }
 
   function resolveComponentById(controller, componentId) {

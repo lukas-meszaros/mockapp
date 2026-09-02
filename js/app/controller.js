@@ -150,6 +150,40 @@
       }, "Component positioned", true);
     };
 
+    controller.actions.setComponentFrames = function (framesById) {
+      if (!framesById || typeof framesById !== "object") {
+        return;
+      }
+
+      commitProjectChange(controller, function (project) {
+        var page = projectData.getActivePage(project);
+        var contextIndex = projectData.buildContextIndex(page);
+        var movedIds = Object.keys(framesById).filter(function (id) {
+          return !!framesById[id];
+        });
+
+        if (!movedIds.length) {
+          return false;
+        }
+
+        var movedAny = false;
+        movedIds.forEach(function (id) {
+          var updated = projectData.updateComponentFrame(page, id, framesById[id], contextIndex);
+          if (updated) {
+            movedAny = true;
+          }
+        });
+
+        if (!movedAny) {
+          return false;
+        }
+
+        controller.state.selection.ids = controller.state.selection.ids.filter(function (id) {
+          return movedIds.indexOf(id) >= 0;
+        });
+      }, "Components positioned", true);
+    };
+
     controller.actions.updateComponentField = function (componentId, path, value) {
       commitProjectChange(controller, function (project) {
         var page = projectData.getActivePage(project);

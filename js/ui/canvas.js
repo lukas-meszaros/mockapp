@@ -7,6 +7,7 @@
   var SNAP_THRESHOLD = 8;
   var MIN_FRAME_WIDTH = 80;
   var MIN_FRAME_HEIGHT = 48;
+  var GHOST_DRAG_THRESHOLD = 20;
 
   function usesContentSelectionChrome(component) {
     switch (component.type) {
@@ -623,48 +624,215 @@
 
       event.preventDefault();
       event.stopPropagation();
-      controller.actions.selectOnly(component.id);
+      var isSelected = controller.state.selection.ids.indexOf(component.id) >= 0;
+      if (!isSelected) {
+        controller.actions.selectOnly(component.id);
+      }
+
+      var dragTargets = resolveDragTargets(controller, component.id, wrapper, preview, component.frame);
+      if (!dragTargets.length) {
+        return;
+      }
+
       frame.classList.add("is-dragging");
 
       var startPoint = toCanvasPoint(controller, event.clientX, event.clientY);
-      var startFrame = utils.deepClone(component.frame);
+      var anchorTarget = findDragTarget(dragTargets, component.id) || dragTargets[0];
+      var startFrame = utils.deepClone(anchorTarget.startFrame);
+      var dragTargetIds = dragTargets.map(function (entry) {
+        return entry.id;
+      });
+      var useGhostDrag = dragTargets.length > GHOST_DRAG_THRESHOLD;
+      var ghostSession = useGhostDrag ? createGroupDragGhosts(controller.refs.canvasRoot, dragTargets) : null;
+      if (useGhostDrag) {
+        dragTargets.forEach(function (entry) {
+          entry.wrapper.classList.add("is-ghost-drag-source");
+        });
+      }
       var guides = createGuides(controller.refs.canvasRoot);
-      var frameScheduler = createFrameScheduler(function (nextFrame) {
-        applyLiveFrame(wrapper, preview, nextFrame);
+      var frameScheduler = createFrameScheduler(function (moveState) {
+        if (ghostSession) {
+          applyGroupDragGhostFrames(ghostSession, moveState.framesById);
+          return;
+        }
+        dragTargets.forEach(function (entry) {
+          var nextFrame = moveState.framesById[entry.id];
+          if (nextFrame) {
+            applyLiveFrame(entry.wrapper, entry.preview, nextFrame);
+          }
+        });
       });
 
       function onMove(moveEvent) {
         var point = toCanvasPoint(controller, moveEvent.clientX, moveEvent.clientY);
-        var nextFrame = {
+        var anchorFrame = {
           x: startFrame.x + (point.x - startPoint.x),
           y: startFrame.y + (point.y - startPoint.y),
           width: startFrame.width,
           height: startFrame.height
         };
-        nextFrame = applyCanvasSnap(controller, component.id, nextFrame, guides, moveEvent.altKey);
-        frameScheduler.schedule(nextFrame);
+        anchorFrame = applyCanvasSnap(controller, dragTargetIds, anchorFrame, guides, moveEvent.altKey);
+        frameScheduler.schedule(buildGroupMoveState(dragTargets, startFrame, anchorFrame));
       }
 
       function onUp(upEvent) {
         frame.classList.remove("is-dragging");
+        if (useGhostDrag) {
+          dragTargets.forEach(function (entry) {
+            entry.wrapper.classList.remove("is-ghost-drag-source");
+          });
+        }
         destroyGuides(guides);
+        destroyGroupDragGhosts(ghostSession);
         frameScheduler.flush();
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
         var point = toCanvasPoint(controller, upEvent.clientX, upEvent.clientY);
-        var endFrame = {
+        var anchorEndFrame = {
           x: startFrame.x + (point.x - startPoint.x),
           y: startFrame.y + (point.y - startPoint.y),
           width: startFrame.width,
           height: startFrame.height
         };
-        endFrame = applyCanvasSnap(controller, component.id, endFrame, null, upEvent.altKey);
-        controller.actions.setComponentFrame(component.id, endFrame);
+        anchorEndFrame = applyCanvasSnap(controller, dragTargetIds, anchorEndFrame, null, upEvent.altKey);
+
+        var finalState = buildGroupMoveState(dragTargets, startFrame, anchorEndFrame);
+        if (dragTargets.length === 1) {
+          controller.actions.setComponentFrame(component.id, finalState.framesById[component.id]);
+          return;
+        }
+        controller.actions.setComponentFrames(finalState.framesById);
       }
 
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
     });
+  }
+
+  function resolveDragTargets(controller, draggedId, draggedWrapper, draggedPreview, draggedFrame) {
+    var page = projectData.getActivePage(controller.state.project);
+    var selectedMap = Object.create(null);
+    (controller.state.selection.ids || []).forEach(function (id) {
+      selectedMap[id] = true;
+    });
+
+    var targets = (page.root.children || []).filter(function (entry) {
+      return !!selectedMap[entry.id] && entry.frame && !entry.meta.locked;
+    }).map(function (entry) {
+      return createDragTarget(controller, entry.id, entry.frame, draggedId, draggedWrapper, draggedPreview);
+    }).filter(Boolean);
+
+    if (!targets.length) {
+      if (!draggedFrame) {
+        return [];
+      }
+      return [createDragTarget(controller, draggedId, draggedFrame, draggedId, draggedWrapper, draggedPreview)].filter(Boolean);
+    }
+
+    return targets;
+  }
+
+  function createDragTarget(controller, componentId, componentFrame, draggedId, draggedWrapper, draggedPreview) {
+    var wrapper = null;
+    var preview = null;
+    if (componentId === draggedId) {
+      wrapper = draggedWrapper;
+      preview = draggedPreview;
+    } else {
+      wrapper = controller.refs.canvasRoot.querySelector('.canvas-node[data-component-id="' + componentId + '"]');
+      preview = wrapper ? wrapper.querySelector(".node-preview") : null;
+    }
+
+    if (!wrapper || !preview) {
+      return null;
+    }
+
+    return {
+      id: componentId,
+      wrapper: wrapper,
+      preview: preview,
+      startFrame: utils.deepClone(componentFrame)
+    };
+  }
+
+  function findDragTarget(dragTargets, componentId) {
+    for (var i = 0; i < dragTargets.length; i += 1) {
+      if (dragTargets[i].id === componentId) {
+        return dragTargets[i];
+      }
+    }
+    return null;
+  }
+
+  function buildGroupMoveState(dragTargets, anchorStartFrame, anchorNextFrame) {
+    var deltaX = anchorNextFrame.x - anchorStartFrame.x;
+    var deltaY = anchorNextFrame.y - anchorStartFrame.y;
+    var framesById = Object.create(null);
+
+    dragTargets.forEach(function (entry) {
+      framesById[entry.id] = {
+        x: entry.startFrame.x + deltaX,
+        y: entry.startFrame.y + deltaY,
+        width: entry.startFrame.width,
+        height: entry.startFrame.height
+      };
+    });
+
+    return {
+      framesById: framesById
+    };
+  }
+
+  function createGroupDragGhosts(root, dragTargets) {
+    if (!root || !dragTargets.length) {
+      return null;
+    }
+
+    var layer = document.createElement("div");
+    layer.className = "drag-ghost-layer";
+    var ghostsById = Object.create(null);
+
+    dragTargets.forEach(function (entry) {
+      var ghost = document.createElement("div");
+      ghost.className = "drag-ghost-item";
+      ghost.style.left = entry.startFrame.x + "px";
+      ghost.style.top = entry.startFrame.y + "px";
+      ghost.style.width = entry.startFrame.width + "px";
+      ghost.style.height = entry.startFrame.height + "px";
+      layer.appendChild(ghost);
+      ghostsById[entry.id] = ghost;
+    });
+
+    root.appendChild(layer);
+    return {
+      layer: layer,
+      ghostsById: ghostsById
+    };
+  }
+
+  function applyGroupDragGhostFrames(session, framesById) {
+    if (!session || !framesById) {
+      return;
+    }
+
+    Object.keys(framesById).forEach(function (componentId) {
+      var frame = framesById[componentId];
+      var ghost = session.ghostsById[componentId];
+      if (!frame || !ghost) {
+        return;
+      }
+      ghost.style.left = frame.x + "px";
+      ghost.style.top = frame.y + "px";
+      ghost.style.width = frame.width + "px";
+      ghost.style.height = frame.height + "px";
+    });
+  }
+
+  function destroyGroupDragGhosts(session) {
+    if (!session || !session.layer) {
+      return;
+    }
+    session.layer.remove();
   }
 
   function isInteractiveTarget(target) {
@@ -857,8 +1025,15 @@
     };
     var bestVertical = null;
     var bestHorizontal = null;
+    var excludedIds = Array.isArray(componentId) ? componentId : [componentId];
+    var excludedMap = Object.create(null);
+    excludedIds.forEach(function (id) {
+      if (id) {
+        excludedMap[id] = true;
+      }
+    });
     var siblings = (page.root.children || []).filter(function (entry) {
-      return entry.id !== componentId && entry.frame;
+      return !excludedMap[entry.id] && entry.frame;
     });
     var snapEnabled = controller.state.project.settings.grid.snap && !disableSnap;
     var grid = controller.state.project.settings.grid.size;

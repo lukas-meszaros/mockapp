@@ -19,6 +19,12 @@ The direct file-launch requirement takes priority. External classic scripts load
 - `node tests/run-tests.js`
 - `open mockapp.html`
 
+## App version workflow
+
+1. Update `version.js` and set `window.MockAppVersion` to the next semantic version.
+2. Keep the `version.js` script include before `js/app/constants.js` in `mockapp.html`.
+3. Open the app to verify the status bar shows `MockApp v<version>`.
+
 ## Dependency update flow
 
 1. Replace local files in `vendor/bootstrap/`.

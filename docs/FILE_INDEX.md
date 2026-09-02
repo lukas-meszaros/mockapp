@@ -32,6 +32,14 @@ Depends on: `vendor/licenses/`, `docs/DEPENDENCIES.md`.
 Modify when: Vendored libraries change.
 Do NOT modify when: App-only code changes.
 
+## version.js
+Purpose: Runtime-loaded app version declaration.
+Subsystem: Release metadata.
+Responsibilities: Declares `window.MockAppVersion` for file-protocol-safe version display.
+Depends on: `mockapp.html`, `js/app/constants.js`.
+Modify when: Bumping app version.
+Do NOT modify when: Changing feature behavior without a version bump.
+
 ## css/mockapp.css
 Purpose: CSS aggregator.
 Subsystem: Styling.
@@ -84,7 +92,7 @@ Do NOT modify when: Adding regular app behavior.
 Purpose: Central runtime constants.
 Subsystem: Runtime foundation.
 Responsibilities: Versions, storage keys, viewport presets, breakpoints, history size, event names.
-Depends on: None.
+Depends on: `version.js` load order in `mockapp.html`.
 Modify when: Versions, defaults, or shared enumerations change.
 Do NOT modify when: A value is local to one feature.
 

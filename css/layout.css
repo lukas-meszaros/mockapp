@@ -74,6 +74,8 @@ textarea:focus-visible,
 }
 
 .topbar {
+  position: relative;
+  z-index: 40;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--mockapp-border);

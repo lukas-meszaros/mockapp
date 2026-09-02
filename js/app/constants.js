@@ -1,6 +1,8 @@
 (function (MockApp) {
+  var runtimeVersion = typeof window.MockAppVersion === "string" ? window.MockAppVersion : "0.2.0";
+
   MockApp.app.constants = {
-    APP_VERSION: "0.2.0",
+    APP_VERSION: runtimeVersion,
     PROJECT_FORMAT: "MockApp",
     PROJECT_VERSION: 1,
     BOOTSTRAP_VERSION: "5.3.8",

@@ -17,6 +17,7 @@
       canvasStage: document.getElementById("canvas-stage"),
       canvasViewport: document.getElementById("canvas-viewport"),
       canvasRoot: document.getElementById("canvas-root"),
+      brandVersion: document.getElementById("brand-version"),
       viewportRuler: document.getElementById("viewport-ruler"),
       pageTitle: document.getElementById("page-title"),
       viewportSelect: document.getElementById("viewport-select"),
@@ -25,6 +26,7 @@
       statusViewport: document.getElementById("status-viewport"),
       statusSelection: document.getElementById("status-selection"),
       statusCount: document.getElementById("status-count"),
+      statusVersion: document.getElementById("status-version"),
       statusSave: document.getElementById("status-save"),
       fileInput: document.getElementById("project-file-input"),
       dialog: document.getElementById("app-dialog"),
@@ -48,12 +50,30 @@
 
   function updateStatus(refs, state, componentCount, selectedName) {
     var viewport = MockApp.app.constants.VIEWPORTS[state.ui.viewportPreset];
-    refs.statusProject.textContent = "Project: " + state.project.metadata.name;
-    refs.statusViewport.textContent = "Viewport: " + viewport.label + " " + viewport.width + "x" + viewport.height;
-    refs.statusSelection.textContent = "Selection: " + (selectedName || "None");
-    refs.statusCount.textContent = "Components: " + componentCount;
-    refs.statusSave.textContent = "Autosave: " + state.ui.saveStatus;
-    refs.zoomLabel.textContent = Math.round(state.ui.zoom * 100) + "%";
+    if (refs.statusProject) {
+      refs.statusProject.textContent = "Project: " + state.project.metadata.name;
+    }
+    if (refs.statusViewport) {
+      refs.statusViewport.textContent = "Viewport: " + viewport.label + " " + viewport.width + "x" + viewport.height;
+    }
+    if (refs.statusSelection) {
+      refs.statusSelection.textContent = "Selection: " + (selectedName || "None");
+    }
+    if (refs.statusCount) {
+      refs.statusCount.textContent = "Components: " + componentCount;
+    }
+    if (refs.statusVersion) {
+      refs.statusVersion.textContent = "MockApp v" + MockApp.app.constants.APP_VERSION;
+    }
+    if (refs.brandVersion) {
+      refs.brandVersion.textContent = "v" + MockApp.app.constants.APP_VERSION;
+    }
+    if (refs.statusSave) {
+      refs.statusSave.textContent = "Autosave: " + state.ui.saveStatus;
+    }
+    if (refs.zoomLabel) {
+      refs.zoomLabel.textContent = Math.round(state.ui.zoom * 100) + "%";
+    }
   }
 
   function setViewportClass(refs, preset, zoom, gridVisible, gridSize) {

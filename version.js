@@ -1,3 +1,3 @@
 (function () {
-  window.MockAppVersion = "0.2.0";
+  window.MockAppVersion = "0.1.20260902";
 })();

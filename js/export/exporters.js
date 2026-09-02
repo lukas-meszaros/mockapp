@@ -14,17 +14,19 @@
       case "layout.column":
         return [columnClasses(props.widths), props.gap ? "d-grid gap-" + props.gap : ""].join(" ").trim();
       case "content.heading":
-        return props.marginBottom ? "mb-" + props.marginBottom : "";
+        return [props.marginBottom ? "mb-" + props.marginBottom : "", textUtilityClasses(props)].join(" ").trim();
       case "content.paragraph":
-        return [(props.lead ? "lead" : ""), props.align ? "text-" + props.align : ""].join(" ").trim();
+        return [(props.lead ? "lead" : ""), textUtilityClasses(props)].join(" ").trim();
+      case "content.label":
+        return textUtilityClasses(props);
       case "action.button":
-        return [buttonVariant(props), buttonSize(props.size)].join(" ").trim();
+        return [buttonVariant(props), buttonSize(props.size), textColorClass(props.textColor)].join(" ").trim();
       case "feedback.alert":
-        return "alert alert-" + (props.variant || "info");
+        return ["alert alert-" + (props.variant || "info"), textColorClass(props.textColor)].join(" ").trim();
       case "content.badge":
-        return ["badge text-bg-" + (props.variant || "primary"), props.pill ? "rounded-pill" : ""].join(" ").trim();
+        return ["badge text-bg-" + (props.variant || "primary"), props.pill ? "rounded-pill" : "", textColorClass(props.textColor)].join(" ").trim();
       case "content.card":
-        return ["card", cardShadow(props.shadow)].join(" ").trim();
+        return ["card", cardShadow(props.shadow), textColorClass(props.textColor)].join(" ").trim();
       case "nav.navbar":
         return ["navbar navbar-expand-lg", navbarTheme(props), navbarBackground(props)].join(" ").trim();
       case "data.table":
@@ -86,6 +88,37 @@
     }).join(" ");
   }
 
+  function textUtilityClasses(props) {
+    return [textSizeClass(props.textSize), textColorClass(props.textColor), textAlignClass(props.align)].join(" ").trim();
+  }
+
+  function textSizeClass(size) {
+    if (!size || size === "inherit") {
+      return "";
+    }
+    return "fs-" + size;
+  }
+
+  function textColorClass(color) {
+    if (!color || color === "default") {
+      return "";
+    }
+    if (color === "muted") {
+      return "text-body-secondary";
+    }
+    if (color === "body") {
+      return "text-body";
+    }
+    return "text-" + color;
+  }
+
+  function textAlignClass(align) {
+    if (!align) {
+      return "";
+    }
+    return "text-" + align;
+  }
+
   function renderComponentHtml(component, isPreview, options) {
     var props = component.props || {};
     var renderOptions = options || {};
@@ -106,24 +139,26 @@
       case "layout.column":
         return '<div class="' + classes + '"' + rootStyle + '>' + childrenHtml + '</div>';
       case "content.heading":
-        return '<h' + props.level + ' class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", false) + textStyle(renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</h' + props.level + '>';
+        return '<h' + props.level + ' class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", false) + componentStyle(props, renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</h' + props.level + '>';
       case "content.paragraph":
-        return '<p class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", true) + textStyle(renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</p>';
+        return '<p class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", true) + componentStyle(props, renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</p>';
+      case "content.label":
+        return '<label class="form-label d-block ' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", false) + componentStyle(props, renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</label>';
       case "action.button":
-        return '<button type="button" class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", false) + textStyle(renderOptions) + (props.disabled ? ' disabled="disabled"' : '') + '>' + textHtml(props.text || "", renderOptions) + '</button>';
+        return '<button type="button" class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", false) + componentStyle(props, renderOptions) + (props.disabled ? ' disabled="disabled"' : '') + '>' + textHtml(props.text || "", renderOptions) + '</button>';
       case "form.input":
         if (renderOptions.hideLabels) {
-          return '<div class="mb-3"' + rootStyle + inlineEditAttrs(renderOptions, "props.label", false) + '><input class="form-control"' + inputAttributes(props) + ' /></div>';
+          return '<div class="mb-3"' + rootStyle + inlineEditAttrs(renderOptions, "props.label", false) + '><label class="form-label">' + utils.escapeHtml(props.label || "") + '</label><input class="form-control"' + inputAttributes(props) + ' /></div>';
         }
         return '<div class="mb-3"' + rootStyle + '><label class="form-label">' + utils.escapeHtml(props.label || "") + '</label><input class="form-control"' + inputAttributes(props) + ' /></div>';
       case "form.textarea":
         if (renderOptions.hideLabels) {
-          return '<div class="mb-3"' + rootStyle + inlineEditAttrs(renderOptions, "props.label", false) + '><textarea class="form-control" rows="' + utils.escapeHtml(props.rows || 4) + '" placeholder="' + utils.escapeHtml(props.placeholder || "") + '"></textarea></div>';
+          return '<div class="mb-3"' + rootStyle + inlineEditAttrs(renderOptions, "props.label", false) + '><label class="form-label">' + utils.escapeHtml(props.label || "") + '</label><textarea class="form-control" rows="' + utils.escapeHtml(props.rows || 4) + '" placeholder="' + utils.escapeHtml(props.placeholder || "") + '"></textarea></div>';
         }
         return '<div class="mb-3"' + rootStyle + '><label class="form-label">' + utils.escapeHtml(props.label || "") + '</label><textarea class="form-control" rows="' + utils.escapeHtml(props.rows || 4) + '" placeholder="' + utils.escapeHtml(props.placeholder || "") + '"></textarea></div>';
       case "form.select":
         if (renderOptions.hideLabels) {
-          return '<div class="mb-3"' + rootStyle + inlineEditAttrs(renderOptions, "props.label", false) + '><select class="form-select"' + (props.multiple ? ' multiple="multiple"' : '') + '>' + optionsHtml(props.optionsText) + '</select></div>';
+          return '<div class="mb-3"' + rootStyle + inlineEditAttrs(renderOptions, "props.label", false) + '><label class="form-label">' + utils.escapeHtml(props.label || "") + '</label><select class="form-select"' + (props.multiple ? ' multiple="multiple"' : '') + '>' + optionsHtml(props.optionsText) + '</select></div>';
         }
         return '<div class="mb-3"' + rootStyle + '><label class="form-label">' + utils.escapeHtml(props.label || "") + '</label><select class="form-select"' + (props.multiple ? ' multiple="multiple"' : '') + '>' + optionsHtml(props.optionsText) + '</select></div>';
       case "form.checkbox":
@@ -142,9 +177,9 @@
         }
         return '<div class="form-check form-switch"' + rootStyle + '><input class="form-check-input" type="checkbox" role="switch"' + (props.checked ? ' checked="checked"' : '') + ' /><label class="form-check-label">' + utils.escapeHtml(props.label || "") + '</label></div>';
       case "feedback.alert":
-        return '<div class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", true) + textStyle(renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</div>';
+        return '<div class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", true) + componentStyle(props, renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</div>';
       case "content.badge":
-        return '<span class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", false) + textStyle(renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</span>';
+        return '<span class="' + classes + '"' + rootStyle + inlineEditAttrs(renderOptions, "props.text", false) + componentStyle(props, renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</span>';
       case "content.image":
         if (props.src) {
           return '<div class="mock-image"' + rootStyle + '><img class="mock-image-element" src="' + utils.escapeHtml(props.src) + '" alt="' + utils.escapeHtml(props.alt || "") + '" style="display:block;width:100%;height:100%;min-height:inherit;object-fit:' + utils.escapeHtml(props.fit || "cover") + ';background:' + utils.escapeHtml(props.placeholderColor || "#d9e2f0") + ';" /></div>';
@@ -153,7 +188,7 @@
       case "content.figure":
         return figureHtml(props, rootStyle);
       case "content.card":
-        return '<div class="' + classes + '"' + rootStyle + '><div class="card-body"><h5 class="card-title"' + inlineEditAttrs(renderOptions, "props.title", false) + textStyle(renderOptions) + '>' + textHtml(props.title || "", renderOptions) + '</h5><p class="card-text"' + inlineEditAttrs(renderOptions, "props.text", true) + textStyle(renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</p>' + childrenHtml + '</div></div>';
+        return '<div class="' + classes + '"' + rootStyle + componentStyle(props, renderOptions) + '><div class="card-body"><h5 class="card-title"' + inlineEditAttrs(renderOptions, "props.title", false) + textStyle(renderOptions) + '>' + textHtml(props.title || "", renderOptions) + '</h5><p class="card-text"' + inlineEditAttrs(renderOptions, "props.text", true) + textStyle(renderOptions) + '>' + textHtml(props.text || "", renderOptions) + '</p>' + childrenHtml + '</div></div>';
       case "nav.navbar":
         return '<nav class="' + classes + '"' + rootStyle + '><div class="container-fluid"><span class="navbar-brand"' + inlineEditAttrs(renderOptions, "props.brand", false) + textStyle(renderOptions) + '>' + textHtml(props.brand || "", renderOptions) + '</span>' + navbarLinksHtml(props) + childrenHtml + '</div></nav>';
       case "nav.breadcrumb":
@@ -312,6 +347,23 @@
       return ' style="white-space: pre-line;"';
     }
     return "";
+  }
+
+  function componentStyle(props, renderOptions) {
+    var styles = [];
+
+    if (renderOptions && renderOptions.preserveLineBreaks) {
+      styles.push("white-space: pre-line;");
+    }
+    if (props && props.backgroundColor) {
+      styles.push("background-color: " + escapeShapeColor(props.backgroundColor, "") + ";");
+    }
+
+    if (!styles.length) {
+      return "";
+    }
+
+    return ' style="' + styles.join(" ") + '"';
   }
 
   function inlineEditAttrs(renderOptions, fieldPath, multiline) {

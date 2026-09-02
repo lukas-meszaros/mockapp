@@ -1,6 +1,9 @@
 (function (MockApp) {
   var GRID_OPTIONS = MockApp.app.constants.GRID_OPTIONS;
   var BREAKPOINTS = MockApp.app.constants.BREAKPOINTS;
+  var TEXT_SIZE_OPTIONS = ["inherit", "1", "2", "3", "4", "5", "6"];
+  var TEXT_COLOR_OPTIONS = ["default", "body", "muted", "primary", "secondary", "success", "danger", "warning", "info", "dark", "light", "white"];
+  var TEXT_ALIGN_OPTIONS = ["start", "center", "end"];
   var MOST_COMMON_TYPES = [
     "action.button",
     "form.input",
@@ -10,7 +13,10 @@
     "form.radio",
     "form.switch",
     "content.heading",
+    "content.label",
     "content.paragraph",
+    "feedback.alert",
+    "content.badge",
     "content.card"
   ];
 
@@ -84,11 +90,15 @@
       category: "Typography",
       tags: ["heading", "title", "text"],
       allowsChildren: false,
-      defaults: { text: "Section Title", level: "2", marginBottom: "3" },
+      defaults: { text: "Section Title", level: "2", marginBottom: "3", textSize: "inherit", textColor: "default", backgroundColor: "", align: "start" },
       fields: [
         { path: "props.text", label: "Text", type: "text" },
         { path: "props.level", label: "Level", type: "select", options: ["1", "2", "3", "4", "5", "6"] },
-        { path: "props.marginBottom", label: "Bottom Margin", type: "select", options: ["0", "1", "2", "3", "4", "5"] }
+        { path: "props.marginBottom", label: "Bottom Margin", type: "select", options: ["0", "1", "2", "3", "4", "5"] },
+        { path: "props.textSize", label: "Text Size", type: "select", options: TEXT_SIZE_OPTIONS },
+        { path: "props.textColor", label: "Text Color", type: "select", options: TEXT_COLOR_OPTIONS },
+        { path: "props.backgroundColor", label: "Background Color", type: "color" },
+        { path: "props.align", label: "Alignment", type: "select", options: TEXT_ALIGN_OPTIONS }
       ]
     },
     {
@@ -98,11 +108,30 @@
       category: "Typography",
       tags: ["text", "paragraph", "copy"],
       allowsChildren: false,
-      defaults: { text: "Describe the purpose of this section.", lead: false, align: "start" },
+      defaults: { text: "Describe the purpose of this section.", lead: false, align: "start", textSize: "inherit", textColor: "default", backgroundColor: "" },
       fields: [
         { path: "props.text", label: "Text", type: "textarea" },
         { path: "props.lead", label: "Lead Style", type: "checkbox" },
-        { path: "props.align", label: "Alignment", type: "select", options: ["start", "center", "end"] }
+        { path: "props.align", label: "Alignment", type: "select", options: TEXT_ALIGN_OPTIONS },
+        { path: "props.textSize", label: "Text Size", type: "select", options: TEXT_SIZE_OPTIONS },
+        { path: "props.textColor", label: "Text Color", type: "select", options: TEXT_COLOR_OPTIONS },
+        { path: "props.backgroundColor", label: "Background Color", type: "color" }
+      ]
+    },
+    {
+      type: "content.label",
+      name: "Label",
+      icon: "tag",
+      category: "Typography",
+      tags: ["label", "form", "text"],
+      allowsChildren: false,
+      defaults: { text: "Field Label", textSize: "inherit", textColor: "default", backgroundColor: "", align: "start" },
+      fields: [
+        { path: "props.text", label: "Text", type: "text" },
+        { path: "props.textSize", label: "Text Size", type: "select", options: TEXT_SIZE_OPTIONS },
+        { path: "props.textColor", label: "Text Color", type: "select", options: TEXT_COLOR_OPTIONS },
+        { path: "props.backgroundColor", label: "Background Color", type: "color" },
+        { path: "props.align", label: "Alignment", type: "select", options: TEXT_ALIGN_OPTIONS }
       ]
     },
     {
@@ -112,12 +141,14 @@
       category: "Buttons",
       tags: ["button", "cta", "action"],
       allowsChildren: false,
-      defaults: { text: "Button", variant: "primary", outline: false, size: "md", disabled: false },
+      defaults: { text: "Button", variant: "primary", outline: false, size: "md", textColor: "default", backgroundColor: "", disabled: false },
       fields: [
         { path: "props.text", label: "Label", type: "text" },
         { path: "props.variant", label: "Variant", type: "select", options: ["primary", "secondary", "success", "danger", "warning", "info", "dark"] },
         { path: "props.outline", label: "Outline", type: "checkbox" },
         { path: "props.size", label: "Size", type: "select", options: ["sm", "md", "lg"] },
+        { path: "props.textColor", label: "Text Color", type: "select", options: TEXT_COLOR_OPTIONS },
+        { path: "props.backgroundColor", label: "Background Color", type: "color" },
         { path: "props.disabled", label: "Disabled", type: "checkbox" }
       ]
     },
@@ -212,10 +243,12 @@
       category: "Feedback",
       tags: ["alert", "message", "feedback"],
       allowsChildren: false,
-      defaults: { text: "Helpful status message", variant: "info" },
+      defaults: { text: "Helpful status message", variant: "info", textColor: "default", backgroundColor: "" },
       fields: [
         { path: "props.text", label: "Text", type: "textarea" },
-        { path: "props.variant", label: "Variant", type: "select", options: ["primary", "secondary", "success", "danger", "warning", "info", "light", "dark"] }
+        { path: "props.variant", label: "Variant", type: "select", options: ["primary", "secondary", "success", "danger", "warning", "info", "light", "dark"] },
+        { path: "props.textColor", label: "Text Color", type: "select", options: TEXT_COLOR_OPTIONS },
+        { path: "props.backgroundColor", label: "Background Color", type: "color" }
       ]
     },
     {
@@ -258,10 +291,12 @@
       category: "Content",
       tags: ["badge", "label", "status"],
       allowsChildren: false,
-      defaults: { text: "New", variant: "primary", pill: true },
+      defaults: { text: "New", variant: "primary", pill: true, textColor: "default", backgroundColor: "" },
       fields: [
         { path: "props.text", label: "Text", type: "text" },
         { path: "props.variant", label: "Variant", type: "select", options: ["primary", "secondary", "success", "danger", "warning", "info", "dark"] },
+        { path: "props.textColor", label: "Text Color", type: "select", options: TEXT_COLOR_OPTIONS },
+        { path: "props.backgroundColor", label: "Background Color", type: "color" },
         { path: "props.pill", label: "Pill", type: "checkbox" }
       ]
     },
@@ -320,11 +355,13 @@
       category: "Content",
       tags: ["card", "panel", "content"],
       allowsChildren: true,
-      defaults: { title: "Card title", text: "Card text", shadow: "sm" },
+      defaults: { title: "Card title", text: "Card text", shadow: "sm", textColor: "default", backgroundColor: "" },
       fields: [
         { path: "props.title", label: "Title", type: "text" },
         { path: "props.text", label: "Body", type: "textarea" },
-        { path: "props.shadow", label: "Shadow", type: "select", options: ["none", "sm", "regular", "lg"] }
+        { path: "props.shadow", label: "Shadow", type: "select", options: ["none", "sm", "regular", "lg"] },
+        { path: "props.textColor", label: "Text Color", type: "select", options: TEXT_COLOR_OPTIONS },
+        { path: "props.backgroundColor", label: "Background Color", type: "color" }
       ]
     },
     {
@@ -786,6 +823,8 @@
         return { x: 48, y: 48, width: 360, height: 92 };
       case "content.paragraph":
         return { x: 48, y: 48, width: 420, height: 132 };
+      case "content.label":
+        return { x: 48, y: 48, width: 220, height: 52 };
       case "form.input":
       case "form.select":
       case "form.textarea":

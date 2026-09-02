@@ -28,6 +28,7 @@ global.localStorage = {
   'js/app/constants.js',
   'js/app/utils.js',
   'js/components/registry.js',
+  'js/export/exporters.js',
   'js/data/project.js',
   'js/history/history.js',
   'js/ui/canvas.js'
@@ -39,6 +40,7 @@ global.localStorage = {
 const projectApi = window.MockApp.data.project;
 const historyApi = window.MockApp.history.manager;
 const registryApi = window.MockApp.components.registry;
+const exportersApi = window.MockApp.exporters.api;
 const canvasTestApi = window.MockApp.ui.canvas.__test;
 
 const project = projectApi.createProject();
@@ -53,6 +55,7 @@ const container = projectApi.createComponent('layout.container');
 const row = projectApi.createComponent('layout.row');
 const column = projectApi.createComponent('layout.column');
 const button = projectApi.createComponent('action.button');
+const label = projectApi.createComponent('content.label');
 const radio = projectApi.createComponent('form.radio');
 const appSwitch = projectApi.createComponent('form.switch');
 const fileInput = projectApi.createComponent('form.file-input');
@@ -89,6 +92,12 @@ projectApi.insertComponent(page, column.id, appSwitch);
 
 assert.equal(typeof container.frame.x, 'number');
 assert.equal(typeof container.frame.width, 'number');
+assert.equal(label.type, 'content.label');
+assert.equal(label.props.text, 'Field Label');
+assert.equal(label.props.textSize, 'inherit');
+assert.equal(label.props.textColor, 'default');
+assert.equal(label.props.backgroundColor, '');
+assert.equal(label.props.align, 'start');
 assert.equal(radio.type, 'form.radio');
 assert.equal(appSwitch.type, 'form.switch');
 assert.equal(fileInput.type, 'form.input');
@@ -138,9 +147,62 @@ assert.equal(line.props.startX, 6);
 assert.equal(line.props.startY, 50);
 assert.equal(line.props.endX, 94);
 assert.equal(line.props.endY, 50);
+assert.equal(projectApi.createComponent('content.heading').props.textSize, 'inherit');
+assert.equal(projectApi.createComponent('content.heading').props.textColor, 'default');
+assert.equal(projectApi.createComponent('content.heading').props.align, 'start');
 assert.equal(typeof button.code, 'object');
 assert.equal(button.code.html, '');
 assert.equal(button.code.css, '');
+assert.equal(projectApi.createComponent('action.button').props.textColor, 'default');
+assert.equal(projectApi.createComponent('action.button').props.backgroundColor, '');
+assert.equal(projectApi.createComponent('feedback.alert').props.textColor, 'default');
+assert.equal(projectApi.createComponent('feedback.alert').props.backgroundColor, '');
+assert.equal(projectApi.createComponent('content.badge').props.textColor, 'default');
+assert.equal(projectApi.createComponent('content.badge').props.backgroundColor, '');
+assert.equal(projectApi.createComponent('content.card').props.textColor, 'default');
+assert.equal(projectApi.createComponent('content.card').props.backgroundColor, '');
+
+const styledButton = projectApi.createComponent('action.button');
+styledButton.props.textColor = 'primary';
+styledButton.props.backgroundColor = '#ffeeaa';
+assert.ok(exportersApi.classListFromComponent(styledButton).includes('text-primary'));
+assert.ok(exportersApi.renderComponentHtml(styledButton, false).includes('background-color: #ffeeaa;'));
+
+const styledAlert = projectApi.createComponent('feedback.alert');
+styledAlert.props.textColor = 'danger';
+styledAlert.props.backgroundColor = '#fff2f2';
+assert.ok(exportersApi.classListFromComponent(styledAlert).includes('text-danger'));
+assert.ok(exportersApi.renderComponentHtml(styledAlert, false).includes('background-color: #fff2f2;'));
+
+const styledBadge = projectApi.createComponent('content.badge');
+styledBadge.props.textColor = 'light';
+styledBadge.props.backgroundColor = '#0f172a';
+assert.ok(exportersApi.classListFromComponent(styledBadge).includes('text-light'));
+assert.ok(exportersApi.renderComponentHtml(styledBadge, false).includes('background-color: #0f172a;'));
+
+const styledCard = projectApi.createComponent('content.card');
+styledCard.props.textColor = 'secondary';
+styledCard.props.backgroundColor = '#f8fafc';
+assert.ok(exportersApi.classListFromComponent(styledCard).includes('text-secondary'));
+assert.ok(exportersApi.renderComponentHtml(styledCard, false).includes('background-color: #f8fafc;'));
+
+const textInputPreview = exportersApi.renderComponentHtml(projectApi.createComponent('form.input'), false, { hideLabels: true });
+assert.ok(textInputPreview.includes('Field Label'));
+
+const textareaPreview = exportersApi.renderComponentHtml(projectApi.createComponent('form.textarea'), false, { hideLabels: true });
+assert.ok(textareaPreview.includes('Message'));
+
+const selectPreview = exportersApi.renderComponentHtml(projectApi.createComponent('form.select'), false, { hideLabels: true });
+assert.ok(selectPreview.includes('Select Option'));
+
+const checkboxPreview = exportersApi.renderComponentHtml(projectApi.createComponent('form.checkbox'), false, { hideLabels: true });
+assert.ok(checkboxPreview.includes('Accept terms'));
+
+const radioPreview = exportersApi.renderComponentHtml(projectApi.createComponent('form.radio'), false, { hideLabels: true });
+assert.ok(radioPreview.includes('Choice'));
+
+const switchPreview = exportersApi.renderComponentHtml(projectApi.createComponent('form.switch'), false, { hideLabels: true });
+assert.ok(switchPreview.includes('Enable option'));
 
 let componentCount = 0;
 projectApi.walkComponents(page.root, () => {

@@ -471,6 +471,8 @@
         return inlineEditTarget("props.text", false);
       case "content.paragraph":
         return inlineEditTarget("props.text", true);
+      case "content.label":
+        return inlineEditTarget("props.text", false);
       case "action.button":
         return inlineEditTarget("props.text", false);
       case "form.input":
